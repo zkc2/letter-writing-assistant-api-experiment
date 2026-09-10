@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .font-serif-reading {
+    font-family: 'Newsreader', 'Lora', Georgia, Cambria, 'Times New Roman', Times, serif;
+  }
+  .font-serif-classic {
+    font-family: 'Lora', Georgia, serif;
+  }
+  .font-display-serif {
+    font-family: 'Cinzel', serif;
+  }
+  .font-sans-clean {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-page {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 2cm !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: transparent !important;
+  }
+}

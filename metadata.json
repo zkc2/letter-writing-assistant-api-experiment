@@ -1,0 +1,8 @@
+{
+  "name": "Resignation Ghostwriter",
+  "description": "A calm, supportive role-guided agent that helps you turn challenging workplace experiences and difficult feelings into a clean, professional resignation letter.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
