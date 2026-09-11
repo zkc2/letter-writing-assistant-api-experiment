@@ -1,41 +1,25 @@
 import React from 'react';
-import { LetterContent, StationeryStyle, LetterFont, LetterFontSize } from '../types';
-import { Type, Palette, Sliders, Edit3, Check } from 'lucide-react';
+import { LetterContent, StationeryStyle, LetterFont, LetterFontSize, Language } from '../types';
+import { Type, Palette } from 'lucide-react';
+import { getTranslation } from '../i18n';
 
 interface StationeryBarProps {
   letter: LetterContent;
   onChange: (updated: LetterContent) => void;
   isEditing: boolean;
   onToggleEdit: () => void;
+  language: Language;
 }
-
-const STATIONERY_STYLES: { id: StationeryStyle; label: string; bgClass: string }[] = [
-  { id: 'classic', label: 'Classic Linen', bgClass: 'bg-[#fcfaf5] border-amber-900/20' },
-  { id: 'modern', label: 'Crisp White', bgClass: 'bg-white border-stone-300' },
-  { id: 'executive', label: 'Executive', bgClass: 'bg-white border-t-2 border-slate-900 border-stone-300' },
-  { id: 'parchment', label: 'Parchment', bgClass: 'bg-[#f6f1e3] border-[#e2d5bd]' },
-  { id: 'minimal', label: 'Minimal', bgClass: 'bg-stone-50 border-stone-200' },
-];
-
-const FONTS: { id: LetterFont; label: string; previewClass: string }[] = [
-  { id: 'serif-reading', label: 'Newsreader', previewClass: 'font-serif-reading' },
-  { id: 'serif-classic', label: 'Lora Classic', previewClass: 'font-serif-classic' },
-  { id: 'display-serif', label: 'Cinzel Formal', previewClass: 'font-display-serif' },
-  { id: 'sans-clean', label: 'Jakarta Sans', previewClass: 'font-sans-clean' },
-];
-
-const SIZES: { id: LetterFontSize; label: string }[] = [
-  { id: 'sm', label: 'Compact' },
-  { id: 'base', label: 'Normal' },
-  { id: 'lg', label: 'Spacious' },
-];
 
 export const StationeryBar: React.FC<StationeryBarProps> = ({
   letter,
   onChange,
   isEditing,
   onToggleEdit,
+  language,
 }) => {
+  const t = getTranslation(language);
+
   const setStationery = (style: StationeryStyle) => {
     onChange({ ...letter, stationery: style, updatedAt: Date.now() });
   };
@@ -48,17 +32,45 @@ export const StationeryBar: React.FC<StationeryBarProps> = ({
     onChange({ ...letter, fontSize: size, updatedAt: Date.now() });
   };
 
+  const getStyleLabel = (id: string, fallback: string) =>
+    t.stationery.styles.find((s) => s.id === id)?.label || fallback;
+  const getFontLabel = (id: string, fallback: string) =>
+    t.stationery.fonts.find((f) => f.id === id)?.label || fallback;
+  const getSizeLabel = (id: string, fallback: string) =>
+    t.stationery.sizes.find((s) => s.id === id)?.label || fallback;
+
+  const stationeryStyles: { id: StationeryStyle; label: string; bgClass: string }[] = [
+    { id: 'classic', label: getStyleLabel('classic', 'Classic Ivory'), bgClass: 'bg-[#fcfaf5] border-amber-900/20' },
+    { id: 'modern', label: getStyleLabel('modern', 'Modern Crisp'), bgClass: 'bg-white border-stone-300' },
+    { id: 'executive', label: getStyleLabel('executive', 'Executive Slate'), bgClass: 'bg-white border-t-2 border-slate-900 border-stone-300' },
+    { id: 'parchment', label: getStyleLabel('parchment', 'Fine Laid Parchment'), bgClass: 'bg-[#f6f1e3] border-[#e2d5bd]' },
+    { id: 'minimal', label: getStyleLabel('minimal', 'Minimalist Flat'), bgClass: 'bg-stone-50 border-stone-200' },
+  ];
+
+  const fontOptions: { id: LetterFont; label: string; previewClass: string }[] = [
+    { id: 'serif-reading', label: getFontLabel('reading', 'Serif Reading'), previewClass: 'font-serif-reading' },
+    { id: 'serif-classic', label: getFontLabel('classic', 'Classic Serif'), previewClass: 'font-serif-classic' },
+    { id: 'display-serif', label: getFontLabel('formal', 'Formal Display'), previewClass: 'font-display-serif' },
+    { id: 'sans-clean', label: getFontLabel('clean', 'Clean Sans'), previewClass: 'font-sans-clean' },
+  ];
+
+  const sizeOptions: { id: LetterFontSize; label: string }[] = [
+    { id: 'sm', label: getSizeLabel('sm', 'Compact') },
+    { id: 'base', label: getSizeLabel('base', 'Standard') },
+    { id: 'lg', label: getSizeLabel('lg', 'Large') },
+  ];
+
   return (
-    <aside aria-label="Stationery and formatting toolbar" className="no-print w-full max-w-4xl mx-auto mb-6 bg-white/95 backdrop-blur-xs border border-stone-200/90 rounded-2xl shadow-sm p-3 font-sans-clean">
+    <aside aria-label={t.stationery.paperStyle} className="no-print w-full max-w-4xl mx-auto mb-6 bg-white/95 backdrop-blur-xs border border-stone-200/90 rounded-2xl shadow-sm p-3 font-sans-clean">
       <div className="flex flex-wrap items-center justify-between gap-4 text-xs">
         {/* Paper style */}
         <div className="flex items-center gap-2">
           <span className="text-stone-400 uppercase tracking-wider font-semibold text-[10px] flex items-center gap-1">
             <Palette className="w-3.5 h-3.5 text-amber-600" />
-            Stationery:
+            {t.stationery.paperStyle}:
           </span>
-          <div className="flex items-center gap-1.5">
-            {STATIONERY_STYLES.map((st) => (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {stationeryStyles.map((st) => (
               <button
                 key={st.id}
                 onClick={() => setStationery(st.id)}
@@ -79,10 +91,10 @@ export const StationeryBar: React.FC<StationeryBarProps> = ({
         <div className="flex items-center gap-2">
           <span className="text-stone-400 uppercase tracking-wider font-semibold text-[10px] flex items-center gap-1">
             <Type className="w-3.5 h-3.5 text-amber-600" />
-            Font:
+            {t.stationery.fontStyle}:
           </span>
           <div className="flex items-center gap-1">
-            {FONTS.map((fn) => (
+            {fontOptions.map((fn) => (
               <button
                 key={fn.id}
                 onClick={() => setFont(fn.id)}
@@ -101,10 +113,10 @@ export const StationeryBar: React.FC<StationeryBarProps> = ({
         {/* Font size */}
         <div className="flex items-center gap-1.5">
           <span className="text-stone-400 uppercase tracking-wider font-semibold text-[10px]">
-            Size:
+            {t.stationery.sizeStyle}:
           </span>
           <div className="flex items-center bg-stone-100 p-0.5 rounded-md">
-            {SIZES.map((sz) => (
+            {sizeOptions.map((sz) => (
               <button
                 key={sz.id}
                 onClick={() => setSize(sz.id)}
@@ -123,3 +135,4 @@ export const StationeryBar: React.FC<StationeryBarProps> = ({
     </aside>
   );
 };
+

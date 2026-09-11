@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, HeartHandshake, Lock } from 'lucide-react';
-import { GhostwriterInputs } from '../types';
+import { X, ShieldCheck, HeartHandshake, Lock, Info, Globe } from 'lucide-react';
+import { GhostwriterInputs, Language, LetterLanguageOption } from '../types';
+import { getTranslation } from '../i18n';
 
 interface ComposerModalProps {
   isOpen: boolean;
@@ -10,37 +11,27 @@ interface ComposerModalProps {
     name?: string;
     title?: string;
   };
+  language: Language;
+  letterLanguage: LetterLanguageOption;
+  onLetterLanguageChange?: (option: LetterLanguageOption) => void;
 }
-
-const RESIGNATION_REASONS = [
-  'Select a reason or describe your own',
-  'Toxic management / hostile culture',
-  'Severe burnout & unsustainable workload',
-  'Broken promises / stalled advancement',
-  'Undercompensated & undervalued',
-  'Accepted a new employment opportunity',
-  'Personal / family health priorities',
-  'Other / describe in your own words',
-];
-
-const RESIGNATION_TONES = [
-  { id: 'Calm & Dignified', label: 'Calm & Dignified', desc: 'Restrained, professional, protective of future references' },
-  { id: 'Strictly Neutral & Minimalist', label: 'Strictly Neutral', desc: 'Zero emotional exposure, basic notice only' },
-  { id: 'Firm & Uncompromising', label: 'Firm & Uncompromising', desc: 'Clear boundaries, no room for counter-offers' },
-  { id: 'Diplomatic & Gracious', label: 'Diplomatic & Gracious', desc: 'Preserving peer friendships while exiting cleanly' },
-];
 
 export const ComposerModal: React.FC<ComposerModalProps> = ({
   isOpen,
   onClose,
   onSubmitInputs,
   initialSender,
+  language,
+  letterLanguage: initialLetterLang,
+  onLetterLanguageChange,
 }) => {
-  const [whyResigning, setWhyResigning] = useState(RESIGNATION_REASONS[0]);
+  const t = getTranslation(language);
+  const [whyResigning, setWhyResigning] = useState(t.composer.reasons[0]);
   const [badExperiences, setBadExperiences] = useState('');
-  const [tone, setTone] = useState('Calm & Dignified');
+  const [tone, setTone] = useState(t.composer.tones[0].id);
   const [noticePeriod, setNoticePeriod] = useState('');
   const [whatNotToSay, setWhatNotToSay] = useState('');
+  const [letterLang, setLetterLang] = useState<LetterLanguageOption>(initialLetterLang || 'follow');
   
   // Details
   const [senderName, setSenderName] = useState(initialSender?.name || '');
@@ -52,32 +43,40 @@ export const ComposerModal: React.FC<ComposerModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const effectiveReason = whyResigning === RESIGNATION_REASONS[0] ? '' : whyResigning;
+    const effectiveReason = whyResigning === t.composer.reasons[0] ? '' : whyResigning;
     const inputs: GhostwriterInputs = {
       whyResigning: effectiveReason,
       badExperiences: badExperiences.trim(),
-      whatToSay: noticePeriod.trim() ? `Formal notice of resignation with final working date: ${noticePeriod.trim()}` : '',
+      whatToSay: noticePeriod.trim() ? `${language === 'zh' ? '正式提出辞职申请，预计最后工作日为：' : 'Formal notice of resignation with final working date: '}${noticePeriod.trim()}` : '',
       whatNotToSay: whatNotToSay.trim(),
       noticePeriodOrDate: noticePeriod.trim(),
       supervisorName: supervisorName.trim(),
       senderName: senderName.trim(),
       senderTitle: senderTitle.trim(),
+      letterLanguage: letterLang,
     };
 
+    if (onLetterLanguageChange) {
+      onLetterLanguageChange(letterLang);
+    }
+
+    const langLabel = letterLang === 'zh' ? 'Simplified Chinese (简体中文)' : letterLang === 'en' ? 'English' : 'Follow interface language (跟随界面语言)';
+
     const lines = [
-      effectiveReason ? `Core reason: ${effectiveReason}` : '',
-      badExperiences.trim() ? `What happened / experiences: ${badExperiences.trim()}` : '',
-      noticePeriod.trim() ? `Exact final working date: ${noticePeriod.trim()}` : '',
-      whatNotToSay.trim() ? `Boundaries (do NOT mention): ${whatNotToSay.trim()}` : '',
-      tone ? `Tone preference: ${tone}` : '',
-      senderName.trim() ? `My name: ${senderName.trim()}` : '',
-      supervisorName.trim() ? `Supervisor: ${supervisorName.trim()}` : '',
-      companyName.trim() ? `Company: ${companyName.trim()}` : '',
+      effectiveReason ? `${t.composer.coreReasonLine} ${effectiveReason}` : '',
+      badExperiences.trim() ? `${t.composer.experiencesLine} ${badExperiences.trim()}` : '',
+      noticePeriod.trim() ? `${t.composer.finalDateLine} ${noticePeriod.trim()}` : '',
+      whatNotToSay.trim() ? `${t.composer.guardrailsLine} ${whatNotToSay.trim()}` : '',
+      tone ? `${t.composer.toneLine} ${tone}` : '',
+      `${t.composer.letterLangLine} ${langLabel}`,
+      senderName.trim() ? `${t.composer.myNameLine} ${senderName.trim()}` : '',
+      supervisorName.trim() ? `${t.composer.supervisorLine} ${supervisorName.trim()}` : '',
+      companyName.trim() ? `${t.composer.companyLine} ${companyName.trim()}` : '',
     ].filter(Boolean);
 
     const message = lines.length > 0
-      ? `Here are details regarding my resignation case:\n${lines.join('\n')}`
-      : 'I would like assistance with my resignation letter.';
+      ? `${t.composer.initialCaseIntro}\n${lines.join('\n')}`
+      : (language === 'zh' ? '我需要协助撰写正式辞职信。' : 'I would like assistance with my resignation letter.');
 
     onSubmitInputs(inputs, message);
     onClose();
@@ -93,8 +92,8 @@ export const ComposerModal: React.FC<ComposerModalProps> = ({
               <HeartHandshake className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-semibold text-base">New Resignation Case</h3>
-              <p className="text-xs text-stone-400">Share your details with the Ghostwriter to review and confirm</p>
+              <h3 className="font-semibold text-base">{t.composer.title}</h3>
+              <p className="text-xs text-stone-400">{t.composer.subtitle}</p>
             </div>
           </div>
           <button
@@ -110,14 +109,14 @@ export const ComposerModal: React.FC<ComposerModalProps> = ({
           {/* Reason selection */}
           <div>
             <label className="font-semibold text-stone-800 block mb-1">
-              What is your primary reason for resigning?
+              {t.composer.reasonLabel}
             </label>
             <select
               value={whyResigning}
               onChange={(e) => setWhyResigning(e.target.value)}
               className="w-full p-2.5 rounded-xl border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:ring-1 focus:ring-amber-500"
             >
-              {RESIGNATION_REASONS.map((r, i) => (
+              {t.composer.reasons.map((r, i) => (
                 <option key={i} value={r}>
                   {r}
                 </option>
@@ -128,29 +127,57 @@ export const ComposerModal: React.FC<ComposerModalProps> = ({
           {/* Bad Experiences / Challenges */}
           <div>
             <label className="font-semibold text-stone-800 block mb-1">
-              What happened? (Raw experiences, feelings, incidents)
+              {t.composer.experiencesLabel}
             </label>
             <textarea
               value={badExperiences}
               onChange={(e) => setBadExperiences(e.target.value)}
               rows={3}
-              placeholder="Describe what happened in your own words (e.g., micromanagement, unfair treatment, burnout). The assistant will help keep this professional."
+              placeholder={t.composer.experiencesPlaceholder}
               className="w-full p-3 rounded-xl border border-stone-200 bg-stone-50 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-amber-500 resize-none"
             />
+          </div>
+
+          {/* Letter Language Setting */}
+          <div className="p-3 rounded-xl bg-stone-50 border border-stone-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-stone-800 flex items-center gap-1.5">
+                <Globe className="w-4 h-4 text-amber-700" />
+                <span>{t.composer.letterLangLabel}</span>
+              </label>
+              <span className="text-[10px] text-stone-500">{t.composer.letterLangHelp}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {t.composer.letterLangOptions.map((opt) => (
+                <button
+                  type="button"
+                  key={opt.id}
+                  onClick={() => setLetterLang(opt.id)}
+                  className={`p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                    letterLang === opt.id
+                      ? 'bg-amber-100/70 border-amber-500 text-amber-950 font-semibold shadow-2xs'
+                      : 'bg-white border-stone-200 text-stone-700 hover:border-stone-300'
+                  }`}
+                >
+                  <div className="text-[11px] font-semibold">{opt.label}</div>
+                  <div className="text-[10px] text-stone-500 font-normal leading-tight mt-0.5">{opt.desc}</div>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Tone & Timeline */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="font-semibold text-stone-800 block mb-1">Tone Archetype</label>
+              <label className="font-semibold text-stone-800 block mb-1">{t.composer.toneLabel}</label>
               <select
                 value={tone}
                 onChange={(e) => setTone(e.target.value)}
                 className="w-full p-2.5 rounded-xl border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:ring-1 focus:ring-amber-500"
               >
-                {RESIGNATION_TONES.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
+                {t.composer.tones.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.label}
                   </option>
                 ))}
               </select>
@@ -158,17 +185,17 @@ export const ComposerModal: React.FC<ComposerModalProps> = ({
 
             <div>
               <label className="font-semibold text-stone-800 block mb-1">
-                Exact Intended Final Working Date
+                {t.composer.dateLabel}
               </label>
               <input
                 type="text"
                 value={noticePeriod}
                 onChange={(e) => setNoticePeriod(e.target.value)}
-                placeholder="Exact date (e.g. November 14, 2026)"
+                placeholder={t.composer.datePlaceholder}
                 className="w-full p-2.5 rounded-xl border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
               <p className="text-[10px] text-stone-500 mt-1">
-                State your exact intended final working date. We do not assume or calculate your date.
+                {t.composer.dateHelp}
               </p>
             </div>
           </div>
@@ -177,13 +204,13 @@ export const ComposerModal: React.FC<ComposerModalProps> = ({
           <div>
             <label className="font-semibold text-stone-800 flex items-center gap-1.5 mb-1">
               <Lock className="w-3.5 h-3.5 text-amber-700" />
-              <span>Boundaries: What do you NOT want said in the letter?</span>
+              <span>{t.composer.guardrailsLabel}</span>
             </label>
             <input
               type="text"
               value={whatNotToSay}
               onChange={(e) => setWhatNotToSay(e.target.value)}
-              placeholder="Leave blank or specify topics to exclude (e.g., do not mention new employer, no grievances on record)"
+              placeholder={t.composer.guardrailsPlaceholder}
               className="w-full p-2.5 rounded-xl border border-stone-200 bg-stone-50 text-stone-900 focus:outline-none focus:ring-1 focus:ring-amber-500"
             />
           </div>
@@ -191,44 +218,52 @@ export const ComposerModal: React.FC<ComposerModalProps> = ({
           {/* Names and Roles */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-stone-100">
             <div>
-              <label className="font-medium text-stone-700 block mb-0.5">Your Name & Title (Optional)</label>
+              <label className="font-medium text-stone-700 block mb-0.5">{t.composer.senderSectionLabel}</label>
               <div className="space-y-1.5">
                 <input
                   type="text"
                   value={senderName}
                   onChange={(e) => setSenderName(e.target.value)}
-                  placeholder="Your Full Name"
+                  placeholder={t.composer.senderNamePlaceholder}
                   className="w-full p-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900"
                 />
                 <input
                   type="text"
                   value={senderTitle}
                   onChange={(e) => setSenderTitle(e.target.value)}
-                  placeholder="Your Role / Title"
+                  placeholder={t.composer.senderTitlePlaceholder}
                   className="w-full p-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900"
                 />
               </div>
             </div>
 
             <div>
-              <label className="font-medium text-stone-700 block mb-0.5">Supervisor & Company (Optional)</label>
+              <label className="font-medium text-stone-700 block mb-0.5">{t.composer.recipientSectionLabel}</label>
               <div className="space-y-1.5">
                 <input
                   type="text"
                   value={supervisorName}
                   onChange={(e) => setSupervisorName(e.target.value)}
-                  placeholder="Supervisor Name"
+                  placeholder={t.composer.supervisorNamePlaceholder}
                   className="w-full p-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900"
                 />
                 <input
                   type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="Company Name"
+                  placeholder={t.composer.companyNamePlaceholder}
                   className="w-full p-2 rounded-lg border border-stone-200 bg-stone-50 text-stone-900"
                 />
               </div>
             </div>
+          </div>
+
+          {/* Data Transmission Notice */}
+          <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-[11px] text-amber-950 flex items-start gap-2">
+            <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+            <span>
+              <strong>{t.composer.dataNoticeTitle}</strong> {t.composer.dataNoticeText}
+            </span>
           </div>
 
           {/* Footer Actions */}
@@ -238,14 +273,14 @@ export const ComposerModal: React.FC<ComposerModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-xs font-medium text-stone-600 hover:text-stone-900 cursor-pointer"
             >
-              Cancel
+              {t.composer.cancel}
             </button>
             <button
               type="submit"
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold transition-all shadow-xs cursor-pointer"
             >
               <ShieldCheck className="w-4 h-4" />
-              <span>Submit Details to Ghostwriter</span>
+              <span>{t.composer.submit}</span>
             </button>
           </div>
         </form>
@@ -253,3 +288,4 @@ export const ComposerModal: React.FC<ComposerModalProps> = ({
     </div>
   );
 };
+

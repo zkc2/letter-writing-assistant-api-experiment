@@ -1,37 +1,45 @@
 import React, { useState } from 'react';
-import { BookOpen, X, Check, ShieldCheck, Sparkles } from 'lucide-react';
-import { LETTER_TEMPLATES } from '../data/templates';
-import { LetterTemplate } from '../types';
+import { BookOpen, X, Check, ShieldCheck } from 'lucide-react';
+import { getTemplates } from '../data/templates';
+import { LetterTemplate, Language } from '../types';
+import { getTranslation } from '../i18n';
 
 interface TemplatesModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectTemplate: (template: LetterTemplate) => void;
+  language: Language;
 }
 
 export const TemplatesModal: React.FC<TemplatesModalProps> = ({
   isOpen,
   onClose,
   onSelectTemplate,
+  language,
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [activeTemplate, setActiveTemplate] = useState<LetterTemplate>(LETTER_TEMPLATES[0]);
+  const t = getTranslation(language);
+  const templates = getTemplates(language);
+
+  const allCategoryLabel = language === 'zh' ? '全部范本' : 'All Scenarios';
+  const [selectedCategory, setSelectedCategory] = useState<string>(allCategoryLabel);
+  const [activeTemplate, setActiveTemplate] = useState<LetterTemplate>(templates[0]);
+
+  // Keep active template synced if language toggles
+  React.useEffect(() => {
+    setSelectedCategory(allCategoryLabel);
+    setActiveTemplate(templates[0]);
+  }, [language, allCategoryLabel]);
 
   if (!isOpen) return null;
 
   const categories = [
-    'All',
-    'Toxic Workplace & Protection',
-    'Burnout & Well-being',
-    'Broken Promises & Stagnation',
-    'Strictly Neutral & Minimalist',
-    'Immediate & Urgent',
-    'Diplomatic & Gracious',
+    allCategoryLabel,
+    ...Array.from(new Set(templates.map((tmpl) => tmpl.category))),
   ];
 
-  const filtered = selectedCategory === 'All'
-    ? LETTER_TEMPLATES
-    : LETTER_TEMPLATES.filter((t) => t.category === selectedCategory);
+  const filtered = selectedCategory === allCategoryLabel
+    ? templates
+    : templates.filter((tpl) => tpl.category === selectedCategory);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
@@ -43,9 +51,9 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-semibold tracking-tight">Resignation Scenarios & Archetypes</h2>
+              <h2 className="text-base font-semibold tracking-tight">{t.templates.title}</h2>
               <p className="text-xs text-stone-400">
-                Calm, legally protective frameworks designed for difficult departures.
+                {t.templates.subtitle}
               </p>
             </div>
           </div>
@@ -126,7 +134,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
                 <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl space-y-1 text-xs">
                   <div className="flex items-center gap-1.5 font-semibold text-amber-900">
                     <ShieldCheck className="w-4 h-4 text-amber-700" />
-                    <span>Ghostwriter Advice for this Scenario:</span>
+                    <span>{t.templates.safeguardsLabel}:</span>
                   </div>
                   <ul className="list-disc list-inside text-amber-800 space-y-0.5 pl-1 text-[11px]">
                     {activeTemplate.ghostwriterPointers.map((p, i) => (
@@ -154,7 +162,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
                 onClick={onClose}
                 className="px-4 py-2 text-xs font-medium text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
               >
-                Close
+                {t.saved.close}
               </button>
               <button
                 type="button"
@@ -165,7 +173,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
                 className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-xs cursor-pointer"
               >
                 <Check className="w-4 h-4" />
-                <span>Load This Archetype</span>
+                <span>{t.templates.useTemplate}</span>
               </button>
             </div>
           </div>
@@ -174,3 +182,4 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
     </div>
   );
 };
+

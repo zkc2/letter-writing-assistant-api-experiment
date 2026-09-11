@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LetterContent } from '../types';
+import { LetterContent, Language } from '../types';
 import {
   Edit3,
   CheckCircle2,
@@ -11,6 +11,7 @@ import {
   Sparkles,
   Lock,
 } from 'lucide-react';
+import { getTranslation } from '../i18n';
 
 interface LetterSheetProps {
   letter: LetterContent;
@@ -18,6 +19,7 @@ interface LetterSheetProps {
   isEditing: boolean;
   onToggleEdit: () => void;
   isApproved?: boolean;
+  language: Language;
 }
 
 export const LetterSheet: React.FC<LetterSheetProps> = ({
@@ -26,10 +28,17 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
   isEditing,
   onToggleEdit,
   isApproved,
+  language,
 }) => {
   const [copied, setCopied] = useState(false);
-  const wordCount = letter.body.trim() ? letter.body.trim().split(/\s+/).length : 0;
-  const readingTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
+  const t = getTranslation(language);
+
+  // Chinese character or English word count
+  const trimmed = letter.body.trim();
+  const wordCount = language === 'zh'
+    ? trimmed.replace(/\s+/g, '').length
+    : (trimmed ? trimmed.split(/\s+/).length : 0);
+  const readingTimeMinutes = Math.max(1, Math.ceil(wordCount / (language === 'zh' ? 300 : 200)));
 
   const getStationeryClasses = () => {
     switch (letter.stationery) {
@@ -115,7 +124,7 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
       letter.recipient.organization || '',
       letter.recipient.address || '',
       '',
-      letter.subject ? `SUBJECT: ${letter.subject}\n` : '',
+      letter.subject ? `${language === 'zh' ? '事由：' : 'SUBJECT: '}${letter.subject}\n` : '',
       letter.salutation,
       '',
       letter.body,
@@ -145,12 +154,12 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
   };
 
   const handleDownload = () => {
-    const fullText = `${letter.title || 'Resignation Letter'}\n${'='.repeat(40)}\n\n` +
-      `Date: ${letter.date}\n\n` +
-      (letter.recipient.name ? `To: ${letter.recipient.name}\n` : '') +
+    const fullText = `${letter.title || (language === 'zh' ? '辞职信' : 'Resignation Letter')}\n${'='.repeat(40)}\n\n` +
+      `${language === 'zh' ? '日期：' : 'Date: '}${letter.date}\n\n` +
+      (letter.recipient.name ? `${language === 'zh' ? '收件人：' : 'To: '}${letter.recipient.name}\n` : '') +
       (letter.recipient.organization ? `${letter.recipient.organization}\n` : '') +
       (letter.recipient.address ? `${letter.recipient.address}\n\n` : '\n') +
-      (letter.subject ? `Subject: ${letter.subject}\n\n` : '') +
+      (letter.subject ? `${language === 'zh' ? '事由：' : 'Subject: '}${letter.subject}\n\n` : '') +
       `${letter.salutation}\n\n` +
       `${letter.body}\n\n` +
       `${letter.closing}\n` +
@@ -162,7 +171,7 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `resignation-letter-${(letter.signoffName || 'notice').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.txt`;
+    link.download = `resignation-letter-${(letter.signoffName || 'notice').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')}.txt`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -175,18 +184,18 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
           {isApproved || letter.isApproved ? (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-900 border border-emerald-300">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-              <span>Approved by You (Ready to Submit)</span>
+              <span>{t.letter.verifiedBadge}</span>
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100/80 text-amber-900 border border-amber-300">
               <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>Live Ghostwriter Draft</span>
+              <span>{t.letter.liveDraftBadge}</span>
             </span>
           )}
           <span className="hidden sm:inline">•</span>
-          <span className="hidden sm:inline">{wordCount} words</span>
+          <span className="hidden sm:inline">{t.letter.wordCount(wordCount)}</span>
           <span className="hidden sm:inline">•</span>
-          <span className="hidden sm:inline">~{readingTimeMinutes} min read</span>
+          <span className="hidden sm:inline">{t.letter.readingTime(readingTimeMinutes)}</span>
         </div>
 
         {/* Action buttons */}
@@ -194,28 +203,28 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
           <button
             onClick={handleCopy}
             className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-stone-50 text-stone-700 border border-stone-200 shadow-2xs transition-colors cursor-pointer"
-            title="Copy letter text to clipboard"
+            title={t.letter.copy}
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
+            <span>{copied ? t.letter.copied : t.letter.copy}</span>
           </button>
 
           <button
             onClick={handleDownload}
             className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-stone-50 text-stone-700 border border-stone-200 shadow-2xs transition-colors cursor-pointer"
-            title="Download text file"
+            title={t.letter.download}
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Download</span>
+            <span>{t.letter.download}</span>
           </button>
 
           <button
             onClick={() => window.print()}
             className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-stone-50 text-stone-700 border border-stone-200 shadow-2xs transition-colors cursor-pointer"
-            title="Print or export as PDF"
+            title={t.letter.print}
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Print / PDF</span>
+            <span>{t.letter.print}</span>
           </button>
 
           <button
@@ -230,12 +239,12 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
             {isEditing ? (
               <>
                 <Check className="w-3.5 h-3.5" />
-                <span>Done Editing</span>
+                <span>{t.letter.doneEditing}</span>
               </>
             ) : (
               <>
                 <Edit3 className="w-3.5 h-3.5" />
-                <span>Manual Edit</span>
+                <span>{t.letter.manualEdit}</span>
               </>
             )}
           </button>
@@ -251,7 +260,7 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
         {(isApproved || letter.isApproved) && (
           <div className="no-print absolute top-6 right-6 flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-900 text-[11px] font-semibold tracking-tight shadow-xs">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>VERIFIED & APPROVED</span>
+            <span>{language === 'zh' ? '已通过离职信审核' : 'OFFICIAL RESIGNATION NOTICE'}</span>
           </div>
         )}
 
@@ -261,33 +270,33 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
             <div className="space-y-1 w-full max-w-md">
               {isEditing ? (
                 <div className="space-y-1 w-full">
-                  <label className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">Your Information:</label>
+                  <label className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">{t.letter.senderInfoLabel}:</label>
                   <input
                     type="text"
                     value={letter.sender.name}
                     onChange={(e) => updateSender('name', e.target.value)}
-                    placeholder="Your Full Name"
+                    placeholder={t.letter.senderNamePlaceholder}
                     className="w-full font-semibold text-lg text-stone-900 bg-amber-50/50 border border-amber-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500"
                   />
                   <input
                     type="text"
                     value={letter.sender.title}
                     onChange={(e) => updateSender('title', e.target.value)}
-                    placeholder="Your Job Title"
+                    placeholder={t.letter.senderTitlePlaceholder}
                     className="w-full text-xs text-stone-600 bg-amber-50/50 border border-amber-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500"
                   />
                   <input
                     type="text"
                     value={letter.sender.contact}
                     onChange={(e) => updateSender('contact', e.target.value)}
-                    placeholder="Personal Email • Personal Phone (optional)"
+                    placeholder={t.letter.senderContactPlaceholder}
                     className="w-full text-xs text-stone-500 bg-amber-50/50 border border-amber-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
               ) : (
                 <>
                   <h2 className="font-semibold text-xl tracking-tight text-stone-900">
-                    {letter.sender.name || letter.signoffName || (letter.body ? 'Your Name' : '')}
+                    {letter.sender.name || letter.signoffName || (letter.body ? (language === 'zh' ? '您的姓名' : 'Your Name') : '')}
                   </h2>
                   {letter.sender.title && (
                     <p className="text-xs text-stone-600 uppercase tracking-wider font-sans-clean">
@@ -307,12 +316,12 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
             <div className="self-start sm:text-right">
               {isEditing ? (
                 <div>
-                  <label className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">Date:</label>
+                  <label className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">{t.letter.dateLabel}:</label>
                   <input
                     type="text"
                     value={letter.date}
                     onChange={(e) => updateField('date', e.target.value)}
-                    placeholder="Date"
+                    placeholder={t.letter.dateLabel}
                     className="text-xs text-stone-700 bg-amber-50/50 border border-amber-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
@@ -330,34 +339,34 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
           {isEditing ? (
             <div className="space-y-1 max-w-sm">
               <label className="text-[10px] uppercase font-bold text-amber-800 tracking-wider block">
-                Supervisor / Recipient Details:
+                {t.letter.recipientDetailsLabel}:
               </label>
               <input
                 type="text"
                 value={letter.recipient.name}
                 onChange={(e) => updateRecipient('name', e.target.value)}
-                placeholder="Supervisor Name"
+                placeholder={t.letter.recipientNamePlaceholder}
                 className="w-full text-xs text-stone-800 bg-amber-50/50 border border-amber-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
               <input
                 type="text"
                 value={letter.recipient.title}
                 onChange={(e) => updateRecipient('title', e.target.value)}
-                placeholder="Supervisor Title"
+                placeholder={t.letter.recipientTitlePlaceholder}
                 className="w-full text-xs text-stone-800 bg-amber-50/50 border border-amber-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
               <input
                 type="text"
                 value={letter.recipient.organization}
                 onChange={(e) => updateRecipient('organization', e.target.value)}
-                placeholder="Company Name (e.g. Acme Corporation)"
+                placeholder={t.letter.recipientOrgPlaceholder}
                 className="w-full text-xs text-stone-800 bg-amber-50/50 border border-amber-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
               <input
                 type="text"
                 value={letter.recipient.address}
                 onChange={(e) => updateRecipient('address', e.target.value)}
-                placeholder="Office Address (optional)"
+                placeholder={t.letter.recipientAddressPlaceholder}
                 className="w-full text-xs text-stone-800 bg-amber-50/50 border border-amber-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
             </div>
@@ -381,19 +390,19 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
         <div className="mb-6">
           {isEditing ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-stone-500 uppercase">Subject:</span>
+              <span className="text-xs font-bold text-stone-500 uppercase">{t.letter.subjectLabel}:</span>
               <input
                 type="text"
                 value={letter.subject}
                 onChange={(e) => updateField('subject', e.target.value)}
-                placeholder="Notice of Resignation — [Your Name]"
+                placeholder={t.letter.subjectPlaceholder}
                 className="w-full text-sm font-semibold text-stone-900 bg-amber-50/50 border border-amber-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
             </div>
           ) : (
             letter.subject && (
               <p className="font-semibold text-stone-900 tracking-wide text-xs sm:text-sm uppercase font-sans-clean">
-                Subject: {letter.subject}
+                {t.letter.subjectLabel}: {letter.subject}
               </p>
             )
           )}
@@ -406,12 +415,12 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
               type="text"
               value={letter.salutation}
               onChange={(e) => updateField('salutation', e.target.value)}
-              placeholder="Dear [Supervisor Name],"
+              placeholder={t.letter.salutationPlaceholder}
               className="w-full font-medium text-stone-900 bg-amber-50/50 border border-amber-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500"
             />
           ) : (
             letter.body ? (
-              <p className="font-medium text-stone-900">{letter.salutation || 'Dear Supervisor,'}</p>
+              <p className="font-medium text-stone-900">{letter.salutation || (language === 'zh' ? '尊敬的主管：' : 'Dear Supervisor,')}</p>
             ) : null
           )}
         </div>
@@ -424,11 +433,11 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
                 value={letter.body}
                 onChange={(e) => updateField('body', e.target.value)}
                 rows={12}
-                placeholder="The formal resignation letter paragraphs will appear here. Separate paragraphs with double line breaks."
+                placeholder={t.letter.bodyPlaceholder}
                 className="w-full p-3 bg-amber-50/40 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 font-inherit leading-relaxed resize-y"
               />
               <p className="text-[11px] text-stone-400 font-sans-clean">
-                Tip: The Resignation Ghostwriter automatically formats your feelings into professional language.
+                {t.letter.bodyHelp}
               </p>
             </div>
           ) : (
@@ -442,10 +451,10 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
               ) : (
                 <div className="p-8 text-center border-2 border-dashed border-stone-200 rounded-xl">
                   <p className="text-stone-400 italic mb-2">
-                    Your resignation letter draft is empty right now.
+                    {t.letter.emptyDraftTitle}
                   </p>
                   <p className="text-xs text-stone-500">
-                    Tell the Resignation Ghostwriter on the left about your situation to generate your tailored letter.
+                    {t.letter.emptyDraftDesc}
                   </p>
                 </div>
               )}
@@ -461,31 +470,31 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
                 type="text"
                 value={letter.closing}
                 onChange={(e) => updateField('closing', e.target.value)}
-                placeholder="Sincerely,"
+                placeholder={t.letter.closingPlaceholder}
                 className="w-full text-stone-900 bg-amber-50/50 border border-amber-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
               <input
                 type="text"
                 value={letter.signoffName}
                 onChange={(e) => updateField('signoffName', e.target.value)}
-                placeholder="Your Full Name"
+                placeholder={t.letter.defaultSignoffName}
                 className="w-full font-medium text-stone-900 bg-amber-50/50 border border-amber-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
             </div>
           ) : (
             letter.body ? (
               <>
-                <p className="text-stone-800">{letter.closing || 'Sincerely,'}</p>
+                <p className="text-stone-800">{letter.closing || (language === 'zh' ? '此致，' : 'Sincerely,')}</p>
 
-                {/* Classic signature styling */}
+                {/* Signature styling */}
                 <div className="py-2">
                   <span className="font-serif-reading italic text-xl text-stone-700 select-none">
-                    {letter.signoffName || letter.sender.name || 'Your Signature'}
+                    {letter.signoffName || letter.sender.name || t.letter.signatureLabel}
                   </span>
                 </div>
 
                 <p className="font-medium text-stone-900">
-                  {letter.signoffName || letter.sender.name || 'Your Name'}
+                  {letter.signoffName || letter.sender.name || (language === 'zh' ? '您的签名' : 'Your Name')}
                 </p>
                 {letter.sender.title && (
                   <p className="text-xs text-stone-500 font-sans-clean">
@@ -507,7 +516,7 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
                   type="text"
                   value={letter.postscript}
                   onChange={(e) => updateField('postscript', e.target.value)}
-                  placeholder="Optional note (e.g. personal contact for remaining friends)"
+                  placeholder={t.letter.psPlaceholder}
                   className="w-full bg-amber-50/50 border border-amber-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500"
                 />
               </div>
@@ -522,7 +531,7 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
           <div className="no-print mt-10 p-4 bg-amber-50/80 border border-amber-200/80 rounded-xl text-xs text-amber-950 font-sans-clean space-y-1.5">
             <span className="font-semibold flex items-center gap-1.5 text-amber-900">
               <ShieldCheck className="w-4 h-4 text-amber-700" />
-              Ghostwriter Professional Safeguards:
+              {t.letter.safeguardsTitle}
             </span>
             <ul className="list-disc list-inside space-y-1 text-amber-900/90 pl-1">
               {letter.advice.map((tip, idx) => (

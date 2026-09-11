@@ -24,7 +24,9 @@ import {
   GhostwriterInputs,
   LetterContent,
   InteractionStep,
+  Language,
 } from '../types';
+import { getTranslation } from '../i18n';
 
 interface GhostwriterChatProps {
   messages: GhostwriterMessage[];
@@ -37,38 +39,8 @@ interface GhostwriterChatProps {
   isApproved: boolean;
   onResetSession: () => void;
   currentStep: InteractionStep;
+  language: Language;
 }
-
-const MESSY_STARTERS = [
-  {
-    label: 'Toxic Micromanagement',
-    text: 'My manager micromanages every minute of my day, changes requirements last minute, and blames our team when deadlines slip. I cannot endure the constant hostility and second-guessing anymore.',
-  },
-  {
-    label: 'Burnout & Extreme Overwork',
-    text: 'I have been putting in 60+ hour weeks for months with no support or relief in sight. My physical and mental health are suffering, and every time I asked for help, it was ignored. I need to leave to recover.',
-  },
-  {
-    label: 'Broken Promises & Stagnation',
-    text: 'I was promised a promotion and salary review six months ago after delivering our biggest client project. Now leadership is stalling and dodging meetings. I realize my growth here has hit a dead end.',
-  },
-  {
-    label: 'Disrespectful Culture',
-    text: 'The communication on our team has turned disrespectful and dismissive. Feedback is given as personal attacks instead of constructive guidance. I am done putting up with this.',
-  },
-  {
-    label: 'Zero Drama / Clean Exit',
-    text: 'I found an opportunity that pays better and aligns with my long-term career goals. I want a calm, professional notice with zero drama, no burned bridges, and minimal fuss.',
-  },
-];
-
-const GUARDRAIL_OPTIONS = [
-  'Do NOT mention my new employer or destination',
-  'Keep specific grievances off the written record',
-  'Do NOT offer extended transition beyond my planned final working date',
-  'Do NOT express false gratitude or exaggerated praise',
-  'State my last day firmly without room for debate',
-];
 
 export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
   messages,
@@ -81,11 +53,13 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
   isApproved,
   onResetSession,
   currentStep,
+  language,
 }) => {
   const [inputText, setInputText] = useState('');
   const [showInputsTracker, setShowInputsTracker] = useState(true);
   const [showGuardrails, setShowGuardrails] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const t = getTranslation(language);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -113,35 +87,38 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
     }
     const combined = updated.join('; ');
     onUpdateInput('whatNotToSay', combined);
-    // Also notify ghostwriter
-    onSendMessage(`Boundary note: Please ensure the letter adheres to this rule: "${guardrailText}"`);
+    // Also notify ghostwriter in appropriate language
+    const boundaryNotice = language === 'zh'
+      ? `保护边界要求：请确保在正式信函中严格遵守此原则："${guardrailText}"`
+      : `Boundary note: Please ensure the letter adheres to this rule: "${guardrailText}"`;
+    onSendMessage(boundaryNotice);
   };
 
   // Check required inputs completion
   const inputChecklist = [
     {
       id: 'whyResigning',
-      label: 'Why you want to resign',
+      label: t.chat.tracker.items.reason.label,
       val: knownInputs.whyResigning,
-      placeholder: 'Placeholder example: Burnout, managerial friction, stagnation, or new opportunity',
+      placeholder: t.chat.tracker.items.reason.placeholder,
     },
     {
       id: 'badExperiences',
-      label: 'Your bad experiences & challenges',
+      label: t.chat.tracker.items.experiences.label,
       val: knownInputs.badExperiences,
-      placeholder: 'Placeholder example: Moving goalposts, lack of support, unpaid overtime',
+      placeholder: t.chat.tracker.items.experiences.placeholder,
     },
     {
       id: 'whatToSay',
-      label: 'What you want to say & final date',
+      label: t.chat.tracker.items.whatToSay.label,
       val: knownInputs.whatToSay || knownInputs.noticePeriodOrDate,
-      placeholder: 'Placeholder example: Resignation notice with exact final working date',
+      placeholder: t.chat.tracker.items.whatToSay.placeholder,
     },
     {
       id: 'whatNotToSay',
-      label: 'Boundaries: What NOT to say',
+      label: t.chat.tracker.items.whatNotToSay.label,
       val: knownInputs.whatNotToSay,
-      placeholder: 'Placeholder example: Keep grievances off record; do not mention new employer',
+      placeholder: t.chat.tracker.items.whatNotToSay.placeholder,
     },
   ];
 
@@ -151,6 +128,17 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
     Boolean((knownInputs.whatToSay && knownInputs.whatToSay.trim()) || (knownInputs.noticePeriodOrDate && knownInputs.noticePeriodOrDate.trim())),
     Boolean(knownInputs.whatNotToSay && knownInputs.whatNotToSay.trim()),
   ].filter(Boolean).length;
+
+  const currentStepName =
+    currentStep === 1
+      ? t.chat.steps.step1
+      : currentStep === 2
+      ? t.chat.steps.step2
+      : currentStep === 3
+      ? t.chat.steps.step3
+      : currentStep === 4
+      ? t.chat.steps.step4
+      : t.chat.steps.step5;
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl border border-stone-200/90 shadow-sm overflow-hidden font-sans-clean">
@@ -162,13 +150,13 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold text-stone-900 tracking-tight">Resignation Ghostwriter</h2>
+              <h2 className="text-sm font-semibold text-stone-900 tracking-tight">{t.chat.title}</h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-900 border border-amber-200">
-                Supportive Friend
+                {t.chat.badge}
               </span>
             </div>
             <p className="text-[11px] text-stone-500">
-              Transforming difficult workplace challenges into a professional resignation draft
+              {t.chat.subtitle}
             </p>
           </div>
         </div>
@@ -176,11 +164,11 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
         <div className="flex items-center gap-1.5">
           <button
             onClick={onResetSession}
-            title="Start new conversation"
+            title={t.chat.newSession}
             className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 rounded-lg transition-colors text-xs flex items-center gap-1 cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline text-[11px]">New Session</span>
+            <span className="hidden sm:inline text-[11px]">{t.chat.newSession}</span>
           </button>
         </div>
       </div>
@@ -188,13 +176,9 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
       {/* 5-Step Interaction Loop Progress Bar */}
       <div className="px-4 py-2.5 bg-stone-100/70 border-b border-stone-200/60 flex items-center justify-between text-xs">
         <div className="flex items-center gap-1.5 text-[11px] text-stone-600 font-medium">
-          <span className="text-stone-400">Interaction Loop:</span>
+          <span className="text-stone-400">{t.chat.interactionLoop}</span>
           <span className="font-semibold text-stone-900">
-            {currentStep === 1 && 'Step 1: Get the Messy Version'}
-            {currentStep === 2 && 'Step 2: Understand & Clarify'}
-            {currentStep === 3 && 'Step 3: Acknowledge & Reflect'}
-            {currentStep === 4 && 'Step 4: Draft & Revise'}
-            {currentStep === 5 && 'Step 5: Approved with "Yes"'}
+            {currentStepName}
           </span>
         </div>
 
@@ -205,7 +189,7 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
             return (
               <div
                 key={stepNum}
-                title={`Step ${stepNum}`}
+                title={`${stepNum}`}
                 className={`w-5 h-1.5 rounded-full transition-all ${
                   isDone
                     ? 'bg-emerald-500'
@@ -227,13 +211,13 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
         >
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-amber-700" />
-            <span>Required Information Tracker</span>
+            <span>{t.chat.tracker.title}</span>
             <span className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-stone-200/80 text-stone-700">
-              {completedCount} / 4 Captured
+              {t.chat.tracker.capturedCount(completedCount)}
             </span>
           </div>
           <div className="flex items-center gap-1 text-[11px] text-stone-500">
-            <span>{showInputsTracker ? 'Hide checklist' : 'Show checklist'}</span>
+            <span>{showInputsTracker ? t.chat.tracker.hideChecklist : t.chat.tracker.showChecklist}</span>
             {showInputsTracker ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </div>
         </button>
@@ -290,7 +274,7 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
                 {!isUser && (
                   <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-stone-200/60 text-[11px] text-amber-800 font-medium">
                     <HeartHandshake className="w-3.5 h-3.5 text-amber-700" />
-                    <span>Resignation Ghostwriter</span>
+                    <span>{t.chat.title}</span>
                   </div>
                 )}
 
@@ -299,7 +283,7 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
                   <div className="mb-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200/70 text-amber-950 text-[11px]">
                     <div className="flex items-center gap-1.5 font-semibold text-amber-900 mb-0.5">
                       <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Reflecting back what matters to you:</span>
+                      <span>{t.chat.reflectionTitle}</span>
                     </div>
                     <p className="italic leading-relaxed">{msg.coreReflection}</p>
                   </div>
@@ -315,7 +299,7 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
                   <div className="mt-3 pt-2.5 border-t border-stone-200/70 space-y-2">
                     <div className="flex items-center gap-1.5 text-[11px] font-semibold text-stone-700">
                       <HelpCircle className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Question to clarify your letter:</span>
+                      <span>{t.chat.questionsTitle}</span>
                     </div>
                     <div className="space-y-1.5">
                       {msg.clarifyingQuestions.map((q, idx) => (
@@ -327,11 +311,14 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
                           <span className="flex-1">{q}</span>
                           <button
                             onClick={() => {
-                              setInputText(`Regarding question ${idx + 1} ("${q}"): `);
+                              const prefix = language === 'zh'
+                                ? `关于问题 ${idx + 1}（"${q}"）：`
+                                : `Regarding question ${idx + 1} ("${q}"): `;
+                              setInputText(prefix);
                             }}
                             className="text-[10px] text-amber-800 font-medium hover:underline shrink-0 cursor-pointer"
                           >
-                            Answer this
+                            {t.chat.answerThis}
                           </button>
                         </div>
                       ))}
@@ -360,9 +347,9 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
                   <div className="mt-3 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <div>
-                      <span className="font-semibold text-xs">Letter Approved & Ready</span>
+                      <span className="font-semibold text-xs">{t.chat.approvedTitle}</span>
                       <p className="text-[10px] text-emerald-800">
-                        You can now copy, print, or download your formal resignation document with confidence.
+                        {t.chat.approvedDesc}
                       </p>
                     </div>
                   </div>
@@ -378,7 +365,7 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
         {isLoading && (
           <div className="flex items-center gap-2 p-3 rounded-2xl bg-stone-100 text-stone-600 max-w-[70%] text-xs animate-pulse">
             <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-600" />
-            <span>Resignation Ghostwriter is listening and revising your letter...</span>
+            <span>{t.chat.loadingGhostwriter}</span>
           </div>
         )}
 
@@ -390,21 +377,21 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
         <div className="px-4 py-2 bg-amber-50/90 border-t border-amber-200/80 flex items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 text-amber-950 text-[11px]">
             <CheckCircle2 className="w-4 h-4 text-amber-700 shrink-0" />
-            <span>Does this draft express what you need with dignity?</span>
+            <span>{t.chat.approvalPrompt}</span>
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onSendMessage("I'd like to adjust a few details in the letter")}
+              onClick={() => onSendMessage(language === 'zh' ? '我还想对信中的几个细节进行调整' : "I'd like to adjust a few details in the letter")}
               className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 cursor-pointer"
             >
-              Keep Tweaking
+              {t.chat.keepTweaking}
             </button>
             <button
               onClick={onApproveLetter}
               className="px-3 py-1 rounded-lg text-[11px] font-semibold text-white bg-emerald-700 hover:bg-emerald-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
             >
               <Check className="w-3.5 h-3.5" />
-              <span>Yes, this is ready</span>
+              <span>{t.chat.approveButton}</span>
             </button>
           </div>
         </div>
@@ -415,14 +402,14 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
             <span className="font-medium text-[11px]">
-              You approved this resignation letter. It is ready for your supervisor.
+              {t.chat.approvedBannerText}
             </span>
           </div>
           <button
-            onClick={() => onSendMessage('I actually need to modify one detail before I send it.')}
+            onClick={() => onSendMessage(language === 'zh' ? '在正式发出之前，我还需要再修改一处细节。' : 'I actually need to modify one detail before I send it.')}
             className="text-[11px] text-emerald-800 underline hover:text-emerald-950 cursor-pointer"
           >
-            Re-open revision
+            {t.chat.reopenRevision}
           </button>
         </div>
       )}
@@ -432,11 +419,11 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
         <div className="px-4 py-2 border-t border-stone-100 bg-stone-50/60">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
-              Step 1: Vent the raw version (Select or tell me your own story):
+              {t.chat.starters.title}
             </span>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {MESSY_STARTERS.map((s, idx) => (
+            {t.chat.starters.items.map((s, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSelectStarter(s.text)}
@@ -456,13 +443,13 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
           className="flex items-center gap-1.5 text-[11px] font-medium text-stone-600 hover:text-stone-900 cursor-pointer"
         >
           <Lock className="w-3.5 h-3.5 text-stone-500" />
-          <span>Set Guardrails ("What NOT to say")</span>
+          <span>{t.chat.guardrails.button}</span>
           {showGuardrails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </button>
 
         {knownInputs.whatNotToSay && (
           <span className="text-[10px] text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded-md font-medium">
-            Active Guardrails Applied
+            {t.chat.guardrails.activeApplied}
           </span>
         )}
       </div>
@@ -470,10 +457,10 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
       {showGuardrails && (
         <div className="px-4 py-2.5 bg-stone-100/70 border-t border-stone-200/60 space-y-1.5 text-xs">
           <p className="text-[11px] text-stone-500">
-            Click to enforce privacy protections in your resignation letter:
+            {t.chat.guardrails.tip}
           </p>
           <div className="flex flex-wrap gap-1.5">
-            {GUARDRAIL_OPTIONS.map((g, i) => {
+            {t.chat.guardrails.options.map((g, i) => {
               const isActive = knownInputs.whatNotToSay?.includes(g);
               return (
                 <button
@@ -509,8 +496,8 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
             }}
             placeholder={
               currentStep === 1
-                ? 'Get the messy version out first: What happened? What made you want to leave?'
-                : 'Reply to the ghostwriter, clarify dates, or say what to adjust...'
+                ? t.chat.inputPlaceholderStep1
+                : t.chat.inputPlaceholderDefault
             }
             rows={2}
             className="flex-1 resize-none rounded-xl border border-stone-200 px-3.5 py-2.5 text-xs text-stone-900 placeholder:text-stone-400 focus:border-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-stone-50/50"
@@ -518,16 +505,21 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
           <button
             type="submit"
             disabled={!inputText.trim() || isLoading}
+            title={t.chat.sendButton}
             className="p-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-xs cursor-pointer shrink-0"
           >
             <Send className="w-4 h-4" />
           </button>
         </div>
-        <div className="flex items-center justify-between mt-2 text-[10px] text-stone-400 px-1">
-          <span>Private browser session • Supportive writing assistant helping you leave with dignity</span>
-          <span>Press Enter to send</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-2 text-[10px] text-stone-500 px-1 gap-1">
+          <span className="flex items-center gap-1 text-stone-600">
+            <Info className="w-3 h-3 text-amber-600 shrink-0" />
+            {t.chat.apiDisclosure}
+          </span>
+          <span className="text-stone-400 shrink-0">{t.chat.pressEnter}</span>
         </div>
       </form>
     </div>
   );
 };
+

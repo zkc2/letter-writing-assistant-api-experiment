@@ -1,3 +1,6 @@
+export type Language = 'en' | 'zh';
+export type LetterLanguageOption = 'follow' | 'en' | 'zh';
+
 export type StationeryStyle = 'classic' | 'modern' | 'executive' | 'parchment' | 'minimal';
 
 export type LetterFont = 'serif-reading' | 'serif-classic' | 'display-serif' | 'sans-clean';
@@ -50,6 +53,7 @@ export interface GhostwriterInputs {
   supervisorName?: string;
   senderName?: string;
   senderTitle?: string;
+  letterLanguage?: LetterLanguageOption;
 }
 
 export interface GhostwriterMessage {
@@ -68,7 +72,7 @@ export type InteractionStep = 1 | 2 | 3 | 4 | 5;
 export interface LetterTemplate {
   id: string;
   title: string;
-  category: 'Toxic Workplace & Protection' | 'Burnout & Well-being' | 'Broken Promises & Stagnation' | 'Immediate & Urgent' | 'Strictly Neutral & Minimalist' | 'Diplomatic & Gracious';
+  category: string;
   description: string;
   letterType: string;
   tone: string;

@@ -2,16 +2,16 @@
 
 @layer utilities {
   .font-serif-reading {
-    font-family: 'Newsreader', 'Lora', Georgia, Cambria, 'Times New Roman', Times, serif;
+    font-family: 'Newsreader', 'Noto Serif SC', 'Lora', Georgia, Cambria, 'Times New Roman', Times, serif;
   }
   .font-serif-classic {
-    font-family: 'Lora', Georgia, serif;
+    font-family: 'Lora', 'Noto Serif SC', Georgia, serif;
   }
   .font-display-serif {
-    font-family: 'Cinzel', serif;
+    font-family: 'Cinzel', 'Noto Serif SC', serif;
   }
   .font-sans-clean {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
   }
 }
 
