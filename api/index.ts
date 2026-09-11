@@ -1,6 +1,8 @@
-import { app } from "../server";
+import app, { app as namedApp } from "../server.js";
 
-export { app };
+const expressApp = namedApp || app;
+
+export { expressApp as app };
 export default function handler(req: any, res: any) {
-  return app(req, res);
+  return expressApp(req, res);
 }
