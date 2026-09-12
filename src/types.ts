@@ -65,6 +65,9 @@ export interface GhostwriterMessage {
   suggestedQuickReplies?: string[];
   timestamp: number;
   isApproved?: boolean;
+  isError?: boolean;
+  isTransientError?: boolean;
+  failedUserMessage?: string;
 }
 
 export type InteractionStep = 1 | 2 | 3 | 4 | 5;

@@ -82,6 +82,7 @@ export interface TranslationSchema {
     loadingGhostwriter: string;
     errorMessagePrefix: string;
     errorTroubleshoot: string;
+    retryThisMessage: string;
   };
   // Intake Form / Composer Modal
   composer: {
@@ -391,6 +392,7 @@ export const TRANSLATIONS: Record<Language, TranslationSchema> = {
       loadingGhostwriter: 'Resignation Ghostwriter is listening and revising your letter...',
       errorMessagePrefix: 'Ghostwriter service notice:',
       errorTroubleshoot: 'Please check your connection and configuration.',
+      retryThisMessage: 'Retry this message',
     },
     composer: {
       title: 'New Resignation Case',
@@ -771,6 +773,7 @@ export const TRANSLATIONS: Record<Language, TranslationSchema> = {
       loadingGhostwriter: '辞职信代笔助手正在倾听并起草信件...',
       errorMessagePrefix: '代笔服务提示：',
       errorTroubleshoot: '请检查网络连接及 API 配置。',
+      retryThisMessage: '重试此消息',
     },
     composer: {
       title: '新辞职个案录入',
@@ -1065,3 +1068,10 @@ export const TRANSLATIONS: Record<Language, TranslationSchema> = {
 export function getTranslation(lang: Language): TranslationSchema {
   return TRANSLATIONS[lang] || TRANSLATIONS.en;
 }
+
+export const TRANSIENT_BUSY_MESSAGE_EN =
+  "Gemini is temporarily busy. Your information has not been lost. Please retry this message in a moment.";
+
+export const TRANSIENT_BUSY_MESSAGE_ZH =
+  "Gemini 暂时繁忙。您提供的信息未丢失，请稍后重试此消息。";
+

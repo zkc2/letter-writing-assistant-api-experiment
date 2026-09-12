@@ -30,7 +30,8 @@ import { getTranslation } from '../i18n';
 
 interface GhostwriterChatProps {
   messages: GhostwriterMessage[];
-  onSendMessage: (text: string) => Promise<void>;
+  onSendMessage: (text: string, isRetry?: boolean, errorMsgId?: string) => Promise<void>;
+  onRetryMessage?: (failedText: string, errorMsgId: string) => Promise<void>;
   currentLetter: LetterContent;
   knownInputs: GhostwriterInputs;
   onUpdateInput: (key: keyof GhostwriterInputs, val: string) => void;
@@ -45,6 +46,7 @@ interface GhostwriterChatProps {
 export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
   messages,
   onSendMessage,
+  onRetryMessage,
   currentLetter,
   knownInputs,
   onUpdateInput,
@@ -111,7 +113,7 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
     {
       id: 'whatToSay',
       label: t.chat.tracker.items.whatToSay.label,
-      val: knownInputs.whatToSay || knownInputs.noticePeriodOrDate,
+      val: knownInputs.noticePeriodOrDate || knownInputs.whatToSay,
       placeholder: t.chat.tracker.items.whatToSay.placeholder,
     },
     {
@@ -125,7 +127,7 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
   const completedCount = [
     Boolean(knownInputs.whyResigning && knownInputs.whyResigning.trim()),
     Boolean(knownInputs.badExperiences && knownInputs.badExperiences.trim()),
-    Boolean((knownInputs.whatToSay && knownInputs.whatToSay.trim()) || (knownInputs.noticePeriodOrDate && knownInputs.noticePeriodOrDate.trim())),
+    Boolean((knownInputs.noticePeriodOrDate && knownInputs.noticePeriodOrDate.trim()) || (knownInputs.whatToSay && knownInputs.whatToSay.trim())),
     Boolean(knownInputs.whatNotToSay && knownInputs.whatNotToSay.trim()),
   ].filter(Boolean).length;
 
@@ -268,91 +270,135 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
                 className={`max-w-[88%] sm:max-w-[82%] rounded-2xl p-4 shadow-xs ${
                   isUser
                     ? 'bg-stone-900 text-stone-100 rounded-br-xs'
+                    : msg.isError
+                    ? 'bg-amber-50/90 text-stone-900 border border-amber-300/80 rounded-bl-xs'
                     : 'bg-stone-100/90 text-stone-900 border border-stone-200/80 rounded-bl-xs'
                 }`}
               >
-                {!isUser && (
-                  <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-stone-200/60 text-[11px] text-amber-800 font-medium">
-                    <HeartHandshake className="w-3.5 h-3.5 text-amber-700" />
-                    <span>{t.chat.title}</span>
-                  </div>
-                )}
-
-                {/* Core Reflection pill if returned by assistant */}
-                {!isUser && msg.coreReflection && (
-                  <div className="mb-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200/70 text-amber-950 text-[11px]">
-                    <div className="flex items-center gap-1.5 font-semibold text-amber-900 mb-0.5">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                      <span>{t.chat.reflectionTitle}</span>
+                {!isUser && msg.isError ? (
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-1.5 pb-1.5 border-b border-amber-200/80 text-[11px] text-amber-900 font-semibold">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      <span>{t.chat.errorMessagePrefix}</span>
                     </div>
-                    <p className="italic leading-relaxed">{msg.coreReflection}</p>
-                  </div>
-                )}
 
-                {/* Main Message Content */}
-                <div className="whitespace-pre-wrap leading-relaxed text-[12.5px]">
-                  {msg.content}
-                </div>
-
-                {/* Clarifying Questions Section */}
-                {!isUser && msg.clarifyingQuestions && msg.clarifyingQuestions.length > 0 && (
-                  <div className="mt-3 pt-2.5 border-t border-stone-200/70 space-y-2">
-                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-stone-700">
-                      <HelpCircle className="w-3.5 h-3.5 text-amber-600" />
-                      <span>{t.chat.questionsTitle}</span>
+                    <div className="whitespace-pre-wrap leading-relaxed text-[12.5px] text-stone-800">
+                      {msg.content}
                     </div>
-                    <div className="space-y-1.5">
-                      {msg.clarifyingQuestions.map((q, idx) => (
-                        <div
-                          key={idx}
-                          className="p-2 rounded-lg bg-white/80 border border-stone-200/90 text-[11px] text-stone-800 flex items-start gap-2"
+
+                    {msg.failedUserMessage && (
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isLoading) return;
+                            if (onRetryMessage) {
+                              onRetryMessage(msg.failedUserMessage!, msg.id);
+                            } else {
+                              onSendMessage(msg.failedUserMessage!, true, msg.id);
+                            }
+                          }}
+                          disabled={isLoading}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-stone-800 border border-stone-300 hover:border-amber-600 hover:text-amber-900 hover:bg-stone-50 active:scale-95 transition-all shadow-2xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                          <span className="font-semibold text-amber-800">{idx + 1}.</span>
-                          <span className="flex-1">{q}</span>
-                          <button
-                            onClick={() => {
-                              const prefix = language === 'zh'
-                                ? `关于问题 ${idx + 1}（"${q}"）：`
-                                : `Regarding question ${idx + 1} ("${q}"): `;
-                              setInputText(prefix);
-                            }}
-                            className="text-[10px] text-amber-800 font-medium hover:underline shrink-0 cursor-pointer"
-                          >
-                            {t.chat.answerThis}
-                          </button>
+                          <RefreshCw className={`w-3.5 h-3.5 text-amber-700 ${isLoading ? 'animate-spin' : ''}`} />
+                          <span>Retry this message / 重试此消息</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    {!isUser && (
+                      <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-stone-200/60 text-[11px] text-amber-800 font-medium">
+                        <HeartHandshake className="w-3.5 h-3.5 text-amber-700" />
+                        <span>{t.chat.title}</span>
+                      </div>
+                    )}
+
+                    {/* Core Reflection pill if returned by assistant */}
+                    {!isUser && msg.coreReflection && (
+                      <div className="mb-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200/70 text-amber-950 text-[11px]">
+                        <div className="flex items-center gap-1.5 font-semibold text-amber-900 mb-0.5">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                          <span>{t.chat.reflectionTitle}</span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                        <p className="italic leading-relaxed">{msg.coreReflection}</p>
+                      </div>
+                    )}
 
-                {/* Suggested Quick Replies */}
-                {!isUser && msg.suggestedQuickReplies && msg.suggestedQuickReplies.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {msg.suggestedQuickReplies.map((reply, i) => (
-                      <button
-                        key={i}
-                        onClick={() => onSendMessage(reply)}
-                        className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-white text-stone-700 border border-stone-300 hover:border-amber-600 hover:text-amber-900 transition-colors shadow-2xs cursor-pointer flex items-center gap-1"
-                      >
-                        <ArrowRight className="w-2.5 h-2.5 text-amber-600" />
-                        <span>{reply}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Approved Badge on Assistant message if user approved */}
-                {!isUser && (msg.isApproved || isApproved) && (
-                  <div className="mt-3 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div>
-                      <span className="font-semibold text-xs">{t.chat.approvedTitle}</span>
-                      <p className="text-[10px] text-emerald-800">
-                        {t.chat.approvedDesc}
-                      </p>
+                    {/* Main Message Content */}
+                    <div className="whitespace-pre-wrap leading-relaxed text-[12.5px]">
+                      {msg.content}
                     </div>
-                  </div>
+
+                    {/* Clarifying Questions Section */}
+                    {!isUser && msg.clarifyingQuestions && msg.clarifyingQuestions.length > 0 && (
+                      <div className="mt-3 pt-2.5 border-t border-stone-200/70 space-y-2">
+                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-stone-700">
+                          <HelpCircle className="w-3.5 h-3.5 text-amber-600" />
+                          <span>{t.chat.questionsTitle}</span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {msg.clarifyingQuestions.map((q, idx) => (
+                            <div
+                              key={idx}
+                              className="p-2 rounded-lg bg-white/80 border border-stone-200/90 text-[11px] text-stone-800 flex items-start gap-2"
+                            >
+                              <span className="font-semibold text-amber-800">{idx + 1}.</span>
+                              <span className="flex-1">{q}</span>
+                              <button
+                                disabled={isLoading}
+                                onClick={() => {
+                                  if (isLoading) return;
+                                  const prefix = language === 'zh'
+                                    ? `关于问题 ${idx + 1}（"${q}"）：`
+                                    : `Regarding question ${idx + 1} ("${q}"): `;
+                                  setInputText(prefix);
+                                }}
+                                className="text-[10px] text-amber-800 font-medium hover:underline shrink-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                {t.chat.answerThis}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Suggested Quick Replies */}
+                    {!isUser && msg.suggestedQuickReplies && msg.suggestedQuickReplies.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {msg.suggestedQuickReplies.map((reply, i) => (
+                          <button
+                            key={i}
+                            disabled={isLoading}
+                            onClick={() => {
+                              if (isLoading) return;
+                              onSendMessage(reply);
+                            }}
+                            className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-white text-stone-700 border border-stone-300 hover:border-amber-600 hover:text-amber-900 transition-colors shadow-2xs cursor-pointer flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            <ArrowRight className="w-2.5 h-2.5 text-amber-600" />
+                            <span>{reply}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Approved Badge on Assistant message if user approved */}
+                    {!isUser && (msg.isApproved || isApproved) && (
+                      <div className="mt-3 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <div>
+                          <span className="font-semibold text-xs">{t.chat.approvedTitle}</span>
+                          <p className="text-[10px] text-emerald-800">
+                            {t.chat.approvedDesc}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               <span className="text-[10px] text-stone-400 mt-1 px-1">
@@ -381,14 +427,22 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onSendMessage(language === 'zh' ? '我还想对信中的几个细节进行调整' : "I'd like to adjust a few details in the letter")}
-              className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 cursor-pointer"
+              disabled={isLoading}
+              onClick={() => {
+                if (isLoading) return;
+                onSendMessage(language === 'zh' ? '我还想对信中的几个细节进行调整' : "I'd like to adjust a few details in the letter");
+              }}
+              className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {t.chat.keepTweaking}
             </button>
             <button
-              onClick={onApproveLetter}
-              className="px-3 py-1 rounded-lg text-[11px] font-semibold text-white bg-emerald-700 hover:bg-emerald-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+              disabled={isLoading}
+              onClick={() => {
+                if (isLoading) return;
+                onApproveLetter();
+              }}
+              className="px-3 py-1 rounded-lg text-[11px] font-semibold text-white bg-emerald-700 hover:bg-emerald-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Check className="w-3.5 h-3.5" />
               <span>{t.chat.approveButton}</span>
@@ -406,8 +460,12 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
             </span>
           </div>
           <button
-            onClick={() => onSendMessage(language === 'zh' ? '在正式发出之前，我还需要再修改一处细节。' : 'I actually need to modify one detail before I send it.')}
-            className="text-[11px] text-emerald-800 underline hover:text-emerald-950 cursor-pointer"
+            disabled={isLoading}
+            onClick={() => {
+              if (isLoading) return;
+              onSendMessage(language === 'zh' ? '在正式发出之前，我还需要再修改一处细节。' : 'I actually need to modify one detail before I send it.');
+            }}
+            className="text-[11px] text-emerald-800 underline hover:text-emerald-950 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {t.chat.reopenRevision}
           </button>
@@ -426,8 +484,12 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
             {t.chat.starters.items.map((s, idx) => (
               <button
                 key={idx}
-                onClick={() => handleSelectStarter(s.text)}
-                className="px-2.5 py-1 rounded-full text-[11px] bg-white border border-stone-200 hover:border-amber-500 hover:bg-amber-50/50 text-stone-700 transition-colors shadow-2xs text-left cursor-pointer"
+                disabled={isLoading}
+                onClick={() => {
+                  if (isLoading) return;
+                  handleSelectStarter(s.text);
+                }}
+                className="px-2.5 py-1 rounded-full text-[11px] bg-white border border-stone-200 hover:border-amber-500 hover:bg-amber-50/50 text-stone-700 transition-colors shadow-2xs text-left cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {s.label}
               </button>
@@ -465,8 +527,12 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
               return (
                 <button
                   key={i}
-                  onClick={() => handleToggleGuardrail(g)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all cursor-pointer flex items-center gap-1.5 ${
+                  disabled={isLoading}
+                  onClick={() => {
+                    if (isLoading) return;
+                    handleToggleGuardrail(g);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed ${
                     isActive
                       ? 'bg-amber-100 text-amber-950 border-amber-400 font-semibold'
                       : 'bg-white text-stone-600 border-stone-200 hover:border-stone-300'

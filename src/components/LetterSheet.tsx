@@ -12,6 +12,13 @@ import {
   Lock,
 } from 'lucide-react';
 import { getTranslation } from '../i18n';
+import {
+  formatSubjectLabel,
+  formatSubjectHeading,
+  normalizeLetter,
+  getNormalizedLetterExportText,
+  printLetterDocument,
+} from '../utils/letterNormalization';
 
 interface LetterSheetProps {
   letter: LetterContent;
@@ -20,6 +27,7 @@ interface LetterSheetProps {
   onToggleEdit: () => void;
   isApproved?: boolean;
   language: Language;
+  onPrint?: () => void;
 }
 
 export const LetterSheet: React.FC<LetterSheetProps> = ({
@@ -29,16 +37,48 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
   onToggleEdit,
   isApproved,
   language,
+  onPrint,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [localPrintBlocked, setLocalPrintBlocked] = useState<string | null>(null);
   const t = getTranslation(language);
 
-  // Chinese character or English word count
-  const trimmed = letter.body.trim();
+  // Normalize letter structure defensively to eliminate embedded duplicate salutations, closings, and signoffs
+  const normalizedLetter = normalizeLetter(letter, language);
+
+  // Chinese character or English word count from normalized body
+  const trimmed = (normalizedLetter.body || '').trim();
   const wordCount = language === 'zh'
     ? trimmed.replace(/\s+/g, '').length
     : (trimmed ? trimmed.split(/\s+/).length : 0);
   const readingTimeMinutes = Math.max(1, Math.ceil(wordCount / (language === 'zh' ? 300 : 200)));
+
+  const displaySenderName =
+    letter.sender.name ||
+    normalizedLetter.signoffName ||
+    (letter.body ? (language === 'zh' ? '您的姓名' : 'Your Name') : '');
+
+  const displaySenderTitle =
+    letter.sender.title ||
+    normalizedLetter.sender.title ||
+    '';
+
+  const displaySalutation =
+    normalizedLetter.salutation ||
+    (language === 'zh' ? '尊敬的主管：' : 'Dear Supervisor,');
+
+  const displayClosing =
+    normalizedLetter.closing ||
+    (language === 'zh' ? '此致\n敬礼' : 'Sincerely,');
+
+  const displaySignoffName =
+    normalizedLetter.signoffName ||
+    letter.sender.name ||
+    (letter.body ? (language === 'zh' ? '您的姓名' : 'Your Name') : '');
+
+  const bodyParagraphs = normalizedLetter.body
+    ? normalizedLetter.body.split('\n\n').map((p) => p.trim()).filter((p) => p.length > 0)
+    : [];
 
   const getStationeryClasses = () => {
     switch (letter.stationery) {
@@ -116,26 +156,7 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
   };
 
   const handleCopy = async () => {
-    const fullText = [
-      letter.date,
-      '',
-      letter.recipient.name || '',
-      letter.recipient.title || '',
-      letter.recipient.organization || '',
-      letter.recipient.address || '',
-      '',
-      letter.subject ? `${language === 'zh' ? '事由：' : 'SUBJECT: '}${letter.subject}\n` : '',
-      letter.salutation,
-      '',
-      letter.body,
-      '',
-      letter.closing,
-      letter.signoffName,
-      letter.sender.title || '',
-      letter.postscript ? `\n${letter.postscript}` : '',
-    ]
-      .filter((line, i, arr) => !(line === '' && arr[i - 1] === ''))
-      .join('\n');
+    const fullText = getNormalizedLetterExportText(letter, language, 'copy');
 
     try {
       await navigator.clipboard.writeText(fullText);
@@ -154,26 +175,33 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
   };
 
   const handleDownload = () => {
-    const fullText = `${letter.title || (language === 'zh' ? '辞职信' : 'Resignation Letter')}\n${'='.repeat(40)}\n\n` +
-      `${language === 'zh' ? '日期：' : 'Date: '}${letter.date}\n\n` +
-      (letter.recipient.name ? `${language === 'zh' ? '收件人：' : 'To: '}${letter.recipient.name}\n` : '') +
-      (letter.recipient.organization ? `${letter.recipient.organization}\n` : '') +
-      (letter.recipient.address ? `${letter.recipient.address}\n\n` : '\n') +
-      (letter.subject ? `${language === 'zh' ? '事由：' : 'Subject: '}${letter.subject}\n\n` : '') +
-      `${letter.salutation}\n\n` +
-      `${letter.body}\n\n` +
-      `${letter.closing}\n` +
-      `${letter.signoffName}\n` +
-      (letter.sender.title ? `${letter.sender.title}\n` : '') +
-      (letter.postscript ? `\n${letter.postscript}\n` : '');
-
+    const fullText = getNormalizedLetterExportText(letter, language, 'download');
     const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `resignation-letter-${(letter.signoffName || 'notice').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')}.txt`;
+    link.download = `resignation-letter-${(displaySignoffName || 'notice').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')}.txt`;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleToggleEdit = () => {
+    if (isEditing) {
+      // Normalize when finishing manual editing
+      onChange(normalizeLetter(letter, language));
+    }
+    onToggleEdit();
+  };
+
+  const handlePrint = () => {
+    setLocalPrintBlocked(null);
+    if (onPrint) {
+      onPrint();
+    } else {
+      printLetterDocument(letter, language, (err) => {
+        setLocalPrintBlocked(err);
+      });
+    }
   };
 
   return (
@@ -219,7 +247,8 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
           </button>
 
           <button
-            onClick={() => window.print()}
+            id="btn-print-letter-sheet"
+            onClick={handlePrint}
             className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-stone-50 text-stone-700 border border-stone-200 shadow-2xs transition-colors cursor-pointer"
             title={t.letter.print}
           >
@@ -229,7 +258,7 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
 
           <button
             id="toggle-edit-mode"
-            onClick={onToggleEdit}
+            onClick={handleToggleEdit}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
               isEditing
                 ? 'bg-amber-600 text-white border border-amber-700 shadow-xs'
@@ -250,6 +279,22 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Visible Error Banner if Popup is Blocked */}
+      {localPrintBlocked && (
+        <div className="no-print w-full mb-3 p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-900 text-xs flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{localPrintBlocked}</span>
+          </div>
+          <button
+            onClick={() => setLocalPrintBlocked(null)}
+            className="ml-3 font-bold text-rose-700 hover:text-rose-900 px-1.5 py-0.5 rounded cursor-pointer"
+            title="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* The Physical Letter Sheet */}
       <div
@@ -296,11 +341,11 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
               ) : (
                 <>
                   <h2 className="font-semibold text-xl tracking-tight text-stone-900">
-                    {letter.sender.name || letter.signoffName || (letter.body ? (language === 'zh' ? '您的姓名' : 'Your Name') : '')}
+                    {displaySenderName}
                   </h2>
-                  {letter.sender.title && (
+                  {displaySenderTitle && (
                     <p className="text-xs text-stone-600 uppercase tracking-wider font-sans-clean">
-                      {letter.sender.title}
+                      {displaySenderTitle}
                     </p>
                   )}
                   {letter.sender.contact && (
@@ -390,7 +435,9 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
         <div className="mb-6">
           {isEditing ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-stone-500 uppercase">{t.letter.subjectLabel}:</span>
+              <span className="text-xs font-bold text-stone-500 uppercase">
+                {formatSubjectLabel(t.letter.subjectLabel)}
+              </span>
               <input
                 type="text"
                 value={letter.subject}
@@ -400,9 +447,9 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
               />
             </div>
           ) : (
-            letter.subject && (
+            normalizedLetter.subject && (
               <p className="font-semibold text-stone-900 tracking-wide text-xs sm:text-sm uppercase font-sans-clean">
-                {t.letter.subjectLabel}: {letter.subject}
+                {formatSubjectHeading(t.letter.subjectLabel, normalizedLetter.subject)}
               </p>
             )
           )}
@@ -420,7 +467,7 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
             />
           ) : (
             letter.body ? (
-              <p className="font-medium text-stone-900">{letter.salutation || (language === 'zh' ? '尊敬的主管：' : 'Dear Supervisor,')}</p>
+              <p className="font-medium text-stone-900">{displaySalutation}</p>
             ) : null
           )}
         </div>
@@ -442,8 +489,8 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
             </div>
           ) : (
             <div className="space-y-4 text-stone-800 leading-relaxed whitespace-pre-line text-left">
-              {letter.body ? (
-                letter.body.split('\n\n').map((para, idx) => (
+              {bodyParagraphs.length > 0 ? (
+                bodyParagraphs.map((para, idx) => (
                   <p key={idx} className="leading-relaxed">
                     {para}
                   </p>
@@ -466,6 +513,9 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
         <div className="mt-8 space-y-2">
           {isEditing ? (
             <div className="max-w-xs space-y-1.5">
+              <label className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
+                {t.letter.closingPlaceholder}:
+              </label>
               <input
                 type="text"
                 value={letter.closing}
@@ -473,6 +523,9 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
                 placeholder={t.letter.closingPlaceholder}
                 className="w-full text-stone-900 bg-amber-50/50 border border-amber-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
+              <label className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
+                {t.letter.defaultSignoffName}:
+              </label>
               <input
                 type="text"
                 value={letter.signoffName}
@@ -483,25 +536,17 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
             </div>
           ) : (
             letter.body ? (
-              <>
-                <p className="text-stone-800">{letter.closing || (language === 'zh' ? '此致，' : 'Sincerely,')}</p>
-
-                {/* Signature styling */}
-                <div className="py-2">
-                  <span className="font-serif-reading italic text-xl text-stone-700 select-none">
-                    {letter.signoffName || letter.sender.name || t.letter.signatureLabel}
-                  </span>
+              <div className="space-y-1">
+                <p className="text-stone-800 whitespace-pre-line">{displayClosing}</p>
+                <div className="pt-3">
+                  <p className="font-medium text-stone-900">{displaySignoffName}</p>
+                  {displaySenderTitle && (
+                    <p className="text-xs text-stone-500 font-sans-clean mt-0.5">
+                      {displaySenderTitle}
+                    </p>
+                  )}
                 </div>
-
-                <p className="font-medium text-stone-900">
-                  {letter.signoffName || letter.sender.name || (language === 'zh' ? '您的签名' : 'Your Name')}
-                </p>
-                {letter.sender.title && (
-                  <p className="text-xs text-stone-500 font-sans-clean">
-                    {letter.sender.title}
-                  </p>
-                )}
-              </>
+              </div>
             ) : null
           )}
         </div>

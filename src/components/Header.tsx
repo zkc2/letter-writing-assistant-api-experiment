@@ -15,6 +15,10 @@ import {
 } from 'lucide-react';
 import { LetterContent, Language } from '../types';
 import { getTranslation } from '../i18n';
+import {
+  getNormalizedLetterExportText,
+  printLetterDocument,
+} from '../utils/letterNormalization';
 
 interface HeaderProps {
   currentLetter: LetterContent;
@@ -28,6 +32,7 @@ interface HeaderProps {
   isApproved?: boolean;
   language: Language;
   onLanguageChange: (lang: Language) => void;
+  onPrint?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -42,34 +47,13 @@ export const Header: React.FC<HeaderProps> = ({
   isApproved,
   language,
   onLanguageChange,
+  onPrint,
 }) => {
   const [copied, setCopied] = useState(false);
   const t = getTranslation(language);
 
   const handleCopy = async () => {
-    const fullText = [
-      currentLetter.date,
-      '',
-      currentLetter.recipient.name ? currentLetter.recipient.name : '',
-      currentLetter.recipient.title ? currentLetter.recipient.title : '',
-      currentLetter.recipient.organization ? currentLetter.recipient.organization : '',
-      currentLetter.recipient.address ? currentLetter.recipient.address : '',
-      '',
-      currentLetter.subject ? `SUBJECT: ${currentLetter.subject}\n` : '',
-      currentLetter.salutation,
-      '',
-      currentLetter.body,
-      '',
-      currentLetter.closing,
-      currentLetter.signoffName,
-      currentLetter.sender.title ? currentLetter.sender.title : '',
-      currentLetter.postscript ? `\n${currentLetter.postscript}` : '',
-    ]
-      .filter((line, i, arr) => {
-        if (line === '' && arr[i - 1] === '') return false;
-        return true;
-      })
-      .join('\n');
+    const fullText = getNormalizedLetterExportText(currentLetter, language, 'copy');
 
     try {
       await navigator.clipboard.writeText(fullText);
@@ -88,19 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const handleDownloadTxt = () => {
-    const fullText = `${currentLetter.title || (language === 'zh' ? '辞职信' : 'Resignation Letter')}\n${'='.repeat(40)}\n\n` +
-      `Date: ${currentLetter.date}\n\n` +
-      (currentLetter.recipient.name ? `To: ${currentLetter.recipient.name}\n` : '') +
-      (currentLetter.recipient.organization ? `${currentLetter.recipient.organization}\n` : '') +
-      (currentLetter.recipient.address ? `${currentLetter.recipient.address}\n\n` : '\n') +
-      (currentLetter.subject ? `Subject: ${currentLetter.subject}\n\n` : '') +
-      `${currentLetter.salutation}\n\n` +
-      `${currentLetter.body}\n\n` +
-      `${currentLetter.closing}\n` +
-      `${currentLetter.signoffName}\n` +
-      (currentLetter.sender.title ? `${currentLetter.sender.title}\n` : '') +
-      (currentLetter.postscript ? `\n${currentLetter.postscript}\n` : '');
-
+    const fullText = getNormalizedLetterExportText(currentLetter, language, 'download');
     const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -111,7 +83,11 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const handlePrint = () => {
-    window.print();
+    if (onPrint) {
+      onPrint();
+    } else {
+      printLetterDocument(currentLetter, language);
+    }
   };
 
   return (

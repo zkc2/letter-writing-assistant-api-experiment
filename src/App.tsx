@@ -8,7 +8,7 @@ import {
   Language,
 } from './types';
 import { getTemplates } from './data/templates';
-import { getTranslation } from './i18n';
+import { getTranslation, TRANSIENT_BUSY_MESSAGE_EN, TRANSIENT_BUSY_MESSAGE_ZH } from './i18n';
 import { Header } from './components/Header';
 import { LetterSheet } from './components/LetterSheet';
 import { StationeryBar } from './components/StationeryBar';
@@ -19,6 +19,7 @@ import { TemplatesModal } from './components/TemplatesModal';
 import { SavedDraftsModal } from './components/SavedDraftsModal';
 import { AboutSystemDiagramModal } from './components/AboutSystemDiagramModal';
 import { Sparkles, MessageSquare, FileText, CheckCircle2 } from 'lucide-react';
+import { normalizeLetter, printLetterDocument } from './utils/letterNormalization';
 
 const STORAGE_KEY = 'resignation_ghostwriter_drafts_v3';
 const ACTIVE_LETTER_KEY = 'resignation_ghostwriter_active_v3';
@@ -201,6 +202,7 @@ export default function App() {
   const [isSavedOpen, setIsSavedOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [printBlockedError, setPrintBlockedError] = useState<string | null>(null);
   const [isLoadingGhostwriter, setIsLoadingGhostwriter] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState<'chat' | 'letter'>('chat');
 
@@ -275,6 +277,14 @@ export default function App() {
     }, 3500);
   };
 
+  const handlePrintLetter = () => {
+    setPrintBlockedError(null);
+    printLetterDocument(currentLetter, language, (err) => {
+      showToast(err);
+      setPrintBlockedError(err);
+    });
+  };
+
   const handleUpdateKnownInput = (key: keyof GhostwriterInputs, val: string) => {
     setKnownInputs((prev) => ({
       ...prev,
@@ -283,16 +293,27 @@ export default function App() {
   };
 
   // Conversational Ghostwriter message handler
-  const handleSendMessage = async (userText: string) => {
-    const userMsg: GhostwriterMessage = {
-      id: 'msg-user-' + Date.now(),
-      role: 'user',
-      content: userText,
-      timestamp: Date.now(),
-    };
+  const handleSendMessage = async (userText: string, isRetry: boolean = false, errorMsgId?: string) => {
+    if (isLoadingGhostwriter) return;
 
-    const newHistory = [...messages, userMsg];
-    setMessages(newHistory);
+    let newHistory: GhostwriterMessage[];
+
+    if (isRetry) {
+      // Retrying: do NOT duplicate visible user message.
+      // Filter out the failed error message so conversation cleanly progresses.
+      newHistory = errorMsgId ? messages.filter((m) => m.id !== errorMsgId) : [...messages];
+      setMessages(newHistory);
+    } else {
+      const userMsg: GhostwriterMessage = {
+        id: 'msg-user-' + Date.now(),
+        role: 'user',
+        content: userText,
+        timestamp: Date.now(),
+      };
+      newHistory = [...messages, userMsg];
+      setMessages(newHistory);
+    }
+
     setIsLoadingGhostwriter(true);
 
     try {
@@ -301,7 +322,9 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userMessage: userText,
-          messages: newHistory.map((m) => ({ role: m.role, content: m.content })),
+          messages: newHistory
+            .filter((m) => !m.isError)
+            .map((m) => ({ role: m.role, content: m.content })),
           currentDraft: {
             subject: currentLetter.subject,
             salutation: currentLetter.salutation,
@@ -316,12 +339,20 @@ export default function App() {
       });
 
       if (!response.ok) {
-        let errorMsg = language === 'zh' ? '撰写助手服务暂时不可用。' : 'Ghostwriter service unavailable.';
+        let isTransient = response.status === 429 || response.status >= 500;
+        let errorMsg = isTransient
+          ? (language === 'zh' ? TRANSIENT_BUSY_MESSAGE_ZH : TRANSIENT_BUSY_MESSAGE_EN)
+          : (language === 'zh' ? '撰写助手服务暂时不可用。' : 'Ghostwriter service unavailable.');
         try {
           const errData = await response.json();
           if (errData.error) errorMsg = errData.error;
+          if (typeof errData.isTransient === 'boolean') {
+            isTransient = errData.isTransient;
+          }
         } catch (_) {}
-        throw new Error(errorMsg);
+        const errObj: any = new Error(errorMsg);
+        errObj.isTransient = isTransient;
+        throw errObj;
       }
 
       const data = await response.json();
@@ -339,35 +370,49 @@ export default function App() {
 
       setMessages((prev) => [...prev, assistantMsg]);
 
-      // If draft was returned and marked ready, update current letter body
-      if (data.draftLetter && data.draftLetter.ready && data.draftLetter.body) {
-        const dl = data.draftLetter;
-        setCurrentLetter((prev) => ({
-          ...prev,
-          title: dl.title || prev.title || (language === 'zh' ? '正式辞职通知书' : 'Notice of Resignation'),
-          subject: dl.subject || prev.subject,
-          salutation: dl.salutation || prev.salutation,
-          body: dl.body,
-          closing: dl.closing || prev.closing || (language === 'zh' ? '此致\n敬礼' : 'Sincerely,'),
-          signoffName: dl.signoffName || prev.signoffName,
-          sender: {
-            ...prev.sender,
-            name: dl.signoffName || prev.sender.name,
-            title: dl.senderTitle || prev.sender.title,
-          },
-          recipient: {
-            ...prev.recipient,
-            name: dl.recipientName || prev.recipient.name,
-            title: dl.recipientTitle || prev.recipient.title,
-            organization: dl.organization || prev.recipient.organization,
-          },
-          isApproved: data.isApproved ? true : prev.isApproved,
-          coreReflection: data.coreMessageReflection || prev.coreReflection,
-          updatedAt: Date.now(),
-        }));
-      } else if (data.draftLetter) {
+      // Update the letter only after a genuinely successful API response containing a valid non-empty generated letter
+      const dl = data.draftLetter;
+      const isReady = Boolean(
+        dl &&
+        (dl.ready === true || String(dl.ready).toLowerCase() === 'true' || data.isSummaryConfirmed === true)
+      );
+      const hasValidGeneratedLetter = Boolean(
+        dl &&
+        typeof dl.body === 'string' &&
+        dl.body.trim().length > 0
+      );
+
+      if (isReady && hasValidGeneratedLetter) {
+        setCurrentLetter((prev) => {
+          const rawLetter: LetterContent = {
+            ...prev,
+            title: dl.title || prev.title || (language === 'zh' ? '正式辞职通知书' : 'Notice of Resignation'),
+            subject: dl.subject || prev.subject,
+            salutation: dl.salutation || prev.salutation,
+            body: dl.body,
+            closing: dl.closing || prev.closing || (language === 'zh' ? '此致\n敬礼' : 'Sincerely,'),
+            signoffName: dl.signoffName || prev.signoffName,
+            // Keep the document-header date as the letter creation date (never overwrite with final working date)
+            date: prev.date,
+            sender: {
+              ...prev.sender,
+              name: dl.signoffName || prev.sender.name,
+              title: dl.senderTitle || prev.sender.title,
+            },
+            recipient: {
+              ...prev.recipient,
+              name: dl.recipientName || prev.recipient.name,
+              title: dl.recipientTitle || prev.recipient.title,
+              organization: dl.organization || prev.recipient.organization,
+            },
+            isApproved: data.isApproved ? true : prev.isApproved,
+            coreReflection: data.coreMessageReflection || prev.coreReflection,
+            updatedAt: Date.now(),
+          };
+          return normalizeLetter(rawLetter, language);
+        });
+      } else if (dl) {
         // Only update metadata (names/titles if extracted), but keep body untouched until user confirms
-        const dl = data.draftLetter;
         setCurrentLetter((prev) => ({
           ...prev,
           sender: {
@@ -386,12 +431,17 @@ export default function App() {
         }));
       }
 
-      // Merge extracted inputs
+      // Merge extracted inputs without overwriting existing non-empty fields with empty values
       if (data.extractedInputs) {
-        setKnownInputs((prev) => ({
-          ...prev,
-          ...data.extractedInputs,
-        }));
+        setKnownInputs((prev) => {
+          const merged = { ...prev };
+          for (const [k, v] of Object.entries(data.extractedInputs)) {
+            if (typeof v === 'string' && v.trim().length > 0) {
+              (merged as any)[k] = v.trim();
+            }
+          }
+          return merged;
+        });
       }
 
       if (data.isApproved) {
@@ -399,21 +449,41 @@ export default function App() {
       }
     } catch (err: any) {
       console.error(err);
-      const errMsg = err.message || (language === 'zh' ? '服务暂时不可用，请检查连接后重试。' : 'Ghostwriter service is currently unavailable. Please check connection and try again.');
-      showToast((language === 'zh' ? '助手提示：' : 'Ghostwriter error: ') + errMsg);
+      const isTransient = Boolean(
+        err.isTransient ||
+        err.status === 429 ||
+        err.status === 503 ||
+        err.message?.includes('temporarily busy') ||
+        err.message?.includes('暂时繁忙') ||
+        err.message?.includes('resource_exhausted') ||
+        err.message?.includes('quota')
+      );
 
+      const content = isTransient
+        ? (language === 'zh' ? TRANSIENT_BUSY_MESSAGE_ZH : TRANSIENT_BUSY_MESSAGE_EN)
+        : (err.message || (language === 'zh' ? '服务暂时不可用，请检查连接后重试。' : 'Ghostwriter service is currently unavailable. Please check connection and try again.'));
+
+      showToast(content);
+
+      // Do NOT update tracker (knownInputs) or letter draft (currentLetter) on failure
       const errorMsg: GhostwriterMessage = {
         id: 'msg-err-' + Date.now(),
         role: 'assistant',
-        content: language === 'zh'
-          ? `提示：${errMsg}\n\n请检查网络连接或 API 服务配置后重试。`
-          : `Error: ${errMsg}\n\nPlease check your server connection or configuration and try again.`,
+        content,
+        isError: true,
+        isTransientError: isTransient,
+        failedUserMessage: userText,
         timestamp: Date.now(),
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setIsLoadingGhostwriter(false);
     }
+  };
+
+  const handleRetryMessage = async (failedText: string, errorMsgId: string) => {
+    if (isLoadingGhostwriter) return;
+    await handleSendMessage(failedText, true, errorMsgId);
   };
 
   const handleApproveLetter = () => {
@@ -542,6 +612,7 @@ export default function App() {
         isApproved={currentLetter.isApproved}
         language={language}
         onLanguageChange={handleLanguageChange}
+        onPrint={handlePrintLetter}
       />
 
       {/* Mobile Tab Switcher */}
@@ -587,6 +658,7 @@ export default function App() {
             <GhostwriterChat
               messages={messages}
               onSendMessage={handleSendMessage}
+              onRetryMessage={handleRetryMessage}
               currentLetter={currentLetter}
               knownInputs={knownInputs}
               onUpdateInput={handleUpdateKnownInput}
@@ -622,6 +694,7 @@ export default function App() {
               onToggleEdit={() => setIsEditing(!isEditing)}
               isApproved={currentLetter.isApproved}
               language={language}
+              onPrint={handlePrintLetter}
             />
           </div>
         </div>
@@ -632,6 +705,19 @@ export default function App() {
         <div className="no-print fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-stone-900 text-stone-100 text-xs px-4 py-2.5 rounded-xl shadow-xl border border-stone-800 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150">
           <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
           <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Print Popup Blocked Notification */}
+      {printBlockedError && (
+        <div className="no-print fixed bottom-18 left-1/2 -translate-x-1/2 z-50 max-w-md bg-rose-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl border border-rose-800 flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <span className="font-medium">{printBlockedError}</span>
+          <button
+            onClick={() => setPrintBlockedError(null)}
+            className="text-rose-300 hover:text-white font-bold ml-1 cursor-pointer"
+          >
+            ✕
+          </button>
         </div>
       )}
 
