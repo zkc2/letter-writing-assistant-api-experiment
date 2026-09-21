@@ -524,10 +524,10 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: text,
-          history: [...messages, userMsg],
+          userMessage: text,
+          messages: [...messages, userMsg],
           knownInputs,
-          currentLetter,
+          currentDraft: currentLetter,
           language,
         }),
       });
@@ -541,11 +541,12 @@ export default function App() {
       const assistantMsg: GhostwriterMessage = {
         id: 'msg-ast-' + Date.now(),
         role: 'assistant',
-        content: data.reply || (language === 'zh' ? '我已梳理你的经历。' : 'I have organized your experience.'),
+        content: data.agentReply || data.coreMessageReflection || (language === 'zh' ? '我已梳理你的经历。' : 'I have organized your experience.'),
         clarifyingQuestions: data.clarifyingQuestions || [],
+        coreReflection: data.coreMessageReflection || '',
         suggestedQuickReplies: data.suggestedQuickReplies || [],
         timestamp: Date.now(),
-        isApproved: false,
+        isApproved: Boolean(data.isApproved),
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
@@ -563,8 +564,8 @@ export default function App() {
         });
       }
 
-      if (data.generatedLetter) {
-        const gl = data.generatedLetter;
+      if (data.draftLetter?.ready && data.draftLetter.body) {
+        const gl = data.draftLetter;
         setCurrentLetter((prev) => ({
           ...prev,
           title: gl.title || prev.title,
@@ -573,8 +574,19 @@ export default function App() {
           body: gl.body || prev.body,
           closing: gl.closing || prev.closing,
           signoffName: gl.signoffName || prev.signoffName,
-          advice: gl.advice || prev.advice,
-          isApproved: false,
+          sender: {
+            ...prev.sender,
+            name: gl.signoffName || prev.sender.name,
+            title: gl.senderTitle || prev.sender.title,
+          },
+          recipient: {
+            ...prev.recipient,
+            name: gl.recipientName || prev.recipient.name,
+            title: gl.recipientTitle || prev.recipient.title,
+            organization: gl.organization || prev.recipient.organization,
+          },
+          coreReflection: data.coreMessageReflection || prev.coreReflection,
+          isApproved: Boolean(data.isApproved),
           updatedAt: Date.now(),
         }));
 
@@ -588,6 +600,14 @@ export default function App() {
           },
           ...prev,
         ]);
+      }
+
+      if (data.isApproved) {
+        setCurrentLetter((prev) => ({
+          ...prev,
+          isApproved: true,
+          updatedAt: Date.now(),
+        }));
       }
 
       if (data.transformations && Array.isArray(data.transformations)) {
