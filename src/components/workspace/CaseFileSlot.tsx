@@ -50,28 +50,28 @@ export const CaseFileSlot: React.FC<CaseFileSlotProps> = ({
     { title: string; titleEn: string; icon: string; promptDesc: string; promptDescEn: string }
   > = {
     whyResigning: {
-      title: '离职主旨与规划',
-      titleEn: 'Reason & Career Trajectory',
+      title: '离职原因',
+      titleEn: 'Reason for Resigning',
       icon: '🎯',
       promptDesc: '确立理性、追求发展的核心离职动因',
       promptDescEn: 'Clear, forward-looking primary resignation reason',
     },
     badExperiences: {
-      title: '职场经历与事实',
-      titleEn: 'Workplace Realities',
+      title: '职场背景',
+      titleEn: 'Workplace Context',
       icon: '📋',
       promptDesc: '记录负荷或沟通事实，公文化提炼为长远平衡诉求',
       promptDescEn: 'Objective workload/schedule realities refined constructively',
     },
     noticePeriodOrDate: {
-      title: '最后工作日与交接',
-      titleEn: 'Final Working Date & Notice',
+      title: '最后在岗日与交接',
+      titleEn: 'Final Working Date and Handover',
       icon: '📅',
       promptDesc: '明确最后在岗日期与交接承诺，确保履约',
       promptDescEn: 'Definitive departure date and structured transition commitment',
     },
     whatNotToSay: {
-      title: '私密安全界限',
+      title: '隐私边界',
       titleEn: 'Privacy Boundaries',
       icon: '🛡️',
       promptDesc: '健康隐私、私下矛盾、同事姓名严格设防',

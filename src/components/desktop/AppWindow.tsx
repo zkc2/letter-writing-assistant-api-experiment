@@ -15,6 +15,7 @@ interface AppWindowProps {
   className?: string;
   children: ReactNode;
   headerRight?: ReactNode;
+  contentClassName?: string;
 }
 
 export const AppWindow: React.FC<AppWindowProps> = ({
@@ -30,6 +31,7 @@ export const AppWindow: React.FC<AppWindowProps> = ({
   className = '',
   children,
   headerRight,
+  contentClassName = 'overflow-hidden',
 }) => {
   return (
     <div
@@ -97,7 +99,7 @@ export const AppWindow: React.FC<AppWindowProps> = ({
       </div>
 
       {/* Window Content */}
-      <div className="flex-1 overflow-auto flex flex-col bg-[#FCFAF6]">{children}</div>
+      <div className={`flex-1 flex flex-col min-h-0 bg-[#FCFAF6] ${contentClassName}`}>{children}</div>
     </div>
   );
 };

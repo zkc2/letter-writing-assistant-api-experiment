@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  BureauFragmentIcon,
-  BureauTimelineIcon,
-  BureauDossierIcon,
-  BureauDraftIcon,
-  BureauSealIcon,
-} from './BureauIcons';
+import { Check, Lock } from 'lucide-react';
 import { WorkspaceSection, CaseDesktopStatus, Language } from '../../types';
 
 interface BureauChapterProgressProps {
@@ -23,144 +17,124 @@ export const BureauChapterProgress: React.FC<BureauChapterProgressProps> = ({
   confirmedCount,
   language,
 }) => {
-  const chapters: {
+  const steps: {
     id: WorkspaceSection;
     roman: string;
-    label: string;
-    labelEn: string;
-    sub: string;
-    subEn: string;
-    icon: React.ComponentType<{ className?: string; size?: number }>;
-    isUnlocked: boolean;
+    nameEn: string;
+    nameZh: string;
     isCompleted: boolean;
     isCurrent: boolean;
+    badge?: string;
   }[] = [
     {
       id: 'intake',
       roman: 'I',
-      label: '摄入记忆碎片',
-      labelEn: 'Memory Intake',
-      sub: '倾诉与初次聆听',
-      subEn: 'Listening & Whispers',
-      icon: BureauFragmentIcon,
-      isUnlocked: true,
+      nameEn: 'Intake',
+      nameZh: '记忆摄入',
       isCompleted: confirmedCount > 0,
       isCurrent: currentSection === 'intake',
     },
     {
       id: 'timeline',
       roman: 'II',
-      label: '重构光阴轨迹',
-      labelEn: 'Time Thread',
-      sub: '按时序排查事实',
-      subEn: 'Chronological Trail',
-      icon: BureauTimelineIcon,
-      isUnlocked: true,
+      nameEn: 'Timeline',
+      nameZh: '经历时线',
       isCompleted: confirmedCount >= 2,
       isCurrent: currentSection === 'timeline',
     },
     {
       id: 'facts',
       roman: 'III',
-      label: '四柱确证案卷',
-      labelEn: 'Case Dossier',
-      sub: `${confirmedCount}/4 柱确证已封存`,
-      subEn: `${confirmedCount}/4 Pillars Sealed`,
-      icon: BureauDossierIcon,
-      isUnlocked: true,
+      nameEn: 'Confirmed Case File',
+      nameZh: '确证案卷',
       isCompleted: confirmedCount === 4,
       isCurrent: currentSection === 'facts',
+      badge: `${confirmedCount}/4`,
     },
     {
       id: 'draft',
       roman: 'IV',
-      label: '拟写辞呈公文',
-      labelEn: 'Formal Draft',
-      sub: status === 'approved' ? '文书已核准' : confirmedCount === 4 ? '公文纸已铺就' : '静待案卷确证',
-      subEn: status === 'approved' ? 'Sealed & Valid' : confirmedCount === 4 ? 'Paper Ready' : 'Awaiting 4/4',
-      icon: status === 'approved' ? BureauSealIcon : BureauDraftIcon,
-      isUnlocked: confirmedCount >= 1, // allow browsing anytime
+      nameEn: 'Formal Draft',
+      nameZh: '正稿公文',
       isCompleted: status === 'approved',
       isCurrent: currentSection === 'draft',
+      badge: status === 'approved' ? (language === 'zh' ? '已核准' : 'Sealed') : undefined,
     },
   ];
 
   return (
     <div
-      aria-label="Bureau Chapter Progress"
-      className="w-full bg-[#1e1b29]/80 backdrop-blur-md border border-[#6f6587]/30 rounded-2xl p-2.5 sm:p-3 mb-3.5 shadow-sm text-xs font-sans-clean no-print text-[#fbf8f4]"
+      aria-label="Chapter Progress Overview"
+      className="w-full bg-[#1e1b29]/80 backdrop-blur-md border border-[#6f6587]/30 rounded-xl px-3 py-1.5 mb-3 shadow-xs text-xs font-sans-clean no-print text-[#fbf8f4]"
     >
-      <div className="flex items-center justify-between gap-2 mb-2 px-1">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#e6a54f] animate-pulse" />
-          <span className="font-mono-system text-[11px] uppercase tracking-widest text-[#d8cce4] font-semibold">
-            {language === 'zh' ? '暮色调查序章・Bureau Chapters' : 'Twilight Bureau Chapters'}
+      <div className="flex items-center justify-between gap-2 overflow-x-auto scrollbar-none py-0.5">
+        {/* Progress label */}
+        <div className="flex items-center gap-1.5 shrink-0 pr-2 border-r border-[#6f6587]/30">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#e6a54f]" />
+          <span className="font-mono-system text-[10px] uppercase tracking-wider text-[#d8cce4]/80 font-bold">
+            {language === 'zh' ? '章节进度' : 'Case Progress'}
           </span>
         </div>
-        <span className="font-mono-system text-[10px] text-[#b8a9c9]">
-          {status === 'approved'
-            ? language === 'zh' ? '◆ 终章・安全签发' : '◆ Final Chapter・Approved'
-            : language === 'zh' ? `案卷确证度 ${confirmedCount}/4` : `Dossier Pillars: ${confirmedCount}/4`}
-        </span>
-      </div>
 
-      {/* Chapters ribbon */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        {chapters.map((ch) => {
-          const Icon = ch.icon;
-          return (
-            <button
-              key={ch.id}
-              onClick={() => onSelectSection(ch.id)}
-              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden group ${
-                ch.isCurrent
-                  ? 'bg-[#2f2b3e] border-[#e6a54f] shadow-md ring-1 ring-[#e6a54f]/50'
-                  : ch.isCompleted
-                  ? 'bg-[#221f2f]/80 border-[#4e8b72]/60 hover:bg-[#2a263a]'
-                  : 'bg-[#1a1724]/70 border-[#6f6587]/20 hover:bg-[#232030]'
-              }`}
-            >
-              {/* Subtle chapter roman watermark */}
-              <span className="absolute right-2 -bottom-1 font-mono-system text-2xl font-bold opacity-10 pointer-events-none select-none text-[#fbf8f4]">
-                {ch.roman}
-              </span>
+        {/* Horizontal Stepper Steps */}
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 justify-between sm:justify-start">
+          {steps.map((step, idx) => (
+            <React.Fragment key={step.id}>
+              {idx > 0 && (
+                <div
+                  className={`h-[1px] w-3 sm:w-6 shrink-0 transition-colors ${
+                    step.isCompleted || step.isCurrent
+                      ? 'bg-[#e6a54f]/60'
+                      : 'bg-[#6f6587]/30'
+                  }`}
+                />
+              )}
 
-              <div className="flex items-center justify-between gap-1 mb-1">
-                <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => onSelectSection(step.id)}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-left transition-all cursor-pointer shrink-0 ${
+                  step.isCurrent
+                    ? 'bg-[#2f2b3e] text-[#e6a54f] border border-[#e6a54f]/60 font-semibold'
+                    : step.isCompleted
+                    ? 'text-[#85d0ad] hover:text-[#fbf8f4] hover:bg-[#252132]'
+                    : 'text-[#b8a9c9]/70 hover:text-[#fbf8f4] hover:bg-[#252132]'
+                }`}
+                title={language === 'zh' ? `点击查看 ${step.nameZh}` : `View ${step.nameEn}`}
+              >
+                {/* Step indicator dot/icon */}
+                <span
+                  className={`w-4 h-4 rounded-full flex items-center justify-center font-mono-system text-[9px] shrink-0 font-bold ${
+                    step.isCompleted
+                      ? 'bg-[#4e8b72] text-[#fbf8f4]'
+                      : step.isCurrent
+                      ? 'bg-[#e6a54f] text-[#1e1b29]'
+                      : 'bg-[#6f6587]/30 text-[#b8a9c9]'
+                  }`}
+                >
+                  {step.isCompleted ? <Check className="w-2.5 h-2.5" /> : step.roman}
+                </span>
+
+                <span className="font-mono-system text-[11px] whitespace-nowrap">
+                  <span className="opacity-70 mr-1 text-[10px]">CH.{step.roman}:</span>
+                  <span>{language === 'zh' ? step.nameZh : step.nameEn}</span>
+                </span>
+
+                {step.badge && (
                   <span
-                    className={`font-mono-system text-[10px] font-bold px-1.5 py-0.2 rounded border ${
-                      ch.isCurrent
-                        ? 'bg-[#e6a54f] text-[#262433] border-[#e6a54f]'
-                        : ch.isCompleted
-                        ? 'bg-[#4e8b72]/30 text-[#85d0ad] border-[#4e8b72]/50'
-                        : 'bg-[#6f6587]/20 text-[#b8a9c9] border-[#6f6587]/30'
+                    className={`ml-1 text-[9px] font-mono-system px-1.5 py-0.2 rounded font-semibold ${
+                      step.isCompleted
+                        ? 'bg-[#4e8b72]/30 text-[#85d0ad]'
+                        : 'bg-[#e6a54f]/20 text-[#e6a54f]'
                     }`}
                   >
-                    CH.{ch.roman}
+                    {step.badge}
                   </span>
-                  <span
-                    className={`p-1 rounded-md ${
-                      ch.isCurrent ? 'text-[#e6a54f]' : ch.isCompleted ? 'text-[#85d0ad]' : 'text-[#b8a9c9]'
-                    }`}
-                  >
-                    <Icon size={14} />
-                  </span>
-                </div>
-
-                {ch.isCompleted && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#4e8b72]" title="Completed" />
                 )}
-              </div>
-
-              <div className="font-semibold text-xs text-[#fbf8f4] truncate">
-                {language === 'zh' ? ch.label : ch.labelEn}
-              </div>
-              <div className="text-[10px] text-[#b8a9c9] truncate mt-0.5 font-mono-system">
-                {language === 'zh' ? ch.sub : ch.subEn}
-              </div>
-            </button>
-          );
-        })}
+              </button>
+            </React.Fragment>
+          ))}
+        </div>
       </div>
     </div>
   );
