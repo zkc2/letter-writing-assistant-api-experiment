@@ -520,7 +520,7 @@ export default function App() {
     setIsLoadingGhostwriter(true);
 
     try {
-      const response = await fetch('/api/ghostwrite', {
+      const response = await fetch('/api/ghostwriter/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
