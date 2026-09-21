@@ -1,21 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --desktop-lavender: #DCD4EA;
-  --desktop-cream: #F6F0E7;
-  --desktop-blue: #B9DDE3;
-  --desktop-pink: #E8B8C9;
-  --desktop-mint: #BFE2D3;
-  --desktop-amber: #F2B35D;
-  --surface-primary: #FFFDFC;
-  --surface-secondary: #F2EDF3;
-  --text-primary: #29252D;
-  --text-secondary: #68616D;
-  --border-dark: #403A45;
-  --confirmed-green: #3B8C68;
-  --warning-amber: #B36D14;
-  --private-purple: #73579A;
-  --error-red: #A94343;
+  /* Quiet Exit Bureau Narrative Palette */
+  --night-ink: #262433;
+  --night-ink-deep: #1c1a26;
+  --night-ink-card: #2f2a3e;
+  --twilight-purple: #6F6587;
+  --twilight-soft: #D8CCE4;
+  --twilight-mist: #B8A9C9;
+  --parchment-gold: #F7F1E5;
+  --parchment-sheet: #FCFAF6;
+  --parchment-card: #F2ECE1;
+  --seal-amber: #E6A54F;
+  --seal-amber-soft: #F4CE94;
+  --jade-safe: #4E8B72;
+  --jade-safe-light: #E7F3ED;
+  --boundary-crimson: #B35858;
+  --boundary-crimson-light: #FBEFEF;
+  
+  /* System Desktop tokens */
+  --desktop-lavender: #D8CCE4;
+  --desktop-cream: #F7F1E5;
+  --desktop-blue: #9EBDCB;
+  --desktop-pink: #DCA9B8;
+  --desktop-mint: #B2D8C6;
+  --desktop-amber: #E6A54F;
+  --surface-primary: #FCFAF6;
+  --surface-secondary: #F0EAE1;
+  --text-primary: #262433;
+  --text-secondary: #655E75;
+  --border-dark: #353043;
+  --confirmed-green: #4E8B72;
+  --warning-amber: #C9822B;
+  --private-purple: #6F6587;
+  --error-red: #B35858;
 }
 
 @layer utilities {
@@ -35,56 +53,82 @@
     font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
   
-  /* Cyber Desktop window shadow and border */
+  /* Bureau Desktop window shadow and border */
   .retro-window-shadow {
-    box-shadow: 4px 5px 0px rgba(64, 58, 69, 0.18), 0 12px 28px -6px rgba(64, 58, 69, 0.12);
+    box-shadow: 4px 6px 0px rgba(38, 36, 51, 0.28), 0 16px 36px -8px rgba(28, 26, 38, 0.35);
   }
   
   .retro-dock-shadow {
-    box-shadow: 0 8px 24px -4px rgba(64, 58, 69, 0.18), 3px 4px 0px rgba(64, 58, 69, 0.15);
+    box-shadow: 0 10px 30px -4px rgba(28, 26, 38, 0.35), 3px 4px 0px rgba(38, 36, 51, 0.25);
+  }
+
+  .bureau-desk-shadow {
+    box-shadow: 0 20px 48px -12px rgba(20, 18, 28, 0.5), 0 2px 8px rgba(20, 18, 28, 0.2);
   }
 
   .stamp-confirmed {
-    border: 2px dashed #3B8C68;
-    color: #3B8C68;
+    border: 2px dashed #4E8B72;
+    color: #4E8B72;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     transform: rotate(-3deg);
   }
 
   .stamp-protected {
-    border: 2px dashed #73579A;
-    color: #73579A;
+    border: 2px dashed #6F6587;
+    color: #6F6587;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     transform: rotate(2deg);
   }
 }
 
-/* Abstract CSS Wallpaper */
-.desktop-wallpaper {
-  background-color: #ECE5F3;
+/* Quiet Exit Bureau Atmospheric Wallpaper: Twilight Desk with Floating Memory Dust */
+.desktop-wallpaper,
+.bg-pastel-wallpaper {
+  background-color: #211e2c;
   background-image: 
-    radial-gradient(circle at 12% 18%, rgba(246, 240, 231, 0.85) 0%, transparent 45%),
-    radial-gradient(circle at 88% 24%, rgba(185, 221, 227, 0.45) 0%, transparent 40%),
-    radial-gradient(circle at 75% 82%, rgba(232, 184, 201, 0.35) 0%, transparent 45%),
-    radial-gradient(circle at 25% 75%, rgba(191, 226, 211, 0.4) 0%, transparent 38%),
-    linear-gradient(135deg, rgba(220, 212, 234, 0.5) 0%, rgba(246, 240, 231, 0.7) 50%, rgba(220, 212, 234, 0.6) 100%);
+    radial-gradient(ellipse at 15% 10%, rgba(111, 101, 135, 0.45) 0%, transparent 60%),
+    radial-gradient(circle at 85% 15%, rgba(230, 165, 79, 0.18) 0%, transparent 45%),
+    radial-gradient(circle at 50% 90%, rgba(78, 139, 114, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 90% 85%, rgba(220, 169, 184, 0.15) 0%, transparent 40%),
+    linear-gradient(145deg, #1b1924 0%, #262335 45%, #2a2539 80%, #1e1b29 100%);
   position: relative;
 }
 
-.desktop-wallpaper::before {
+.desktop-wallpaper::before,
+.bg-pastel-wallpaper::before {
   content: "";
   position: absolute;
   inset: 0;
   background-image: 
-    radial-gradient(#403A45 0.75px, transparent 0.75px),
-    linear-gradient(to right, rgba(64, 58, 69, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(64, 58, 69, 0.03) 1px, transparent 1px);
-  background-size: 24px 24px, 48px 48px, 48px 48px;
+    radial-gradient(#d8cce4 0.65px, transparent 0.65px),
+    linear-gradient(to right, rgba(216, 204, 228, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(216, 204, 228, 0.035) 1px, transparent 1px);
+  background-size: 28px 28px, 56px 56px, 56px 56px;
   background-position: 0 0, 0 0, 0 0;
   opacity: 0.45;
   pointer-events: none;
+}
+
+/* Animated Ink Moth wing flutter */
+@keyframes flutter {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-3deg) scale(1.02);
+  }
+  50% {
+    transform: rotate(2deg) scale(0.98);
+  }
+  75% {
+    transform: rotate(-1deg) scale(1.01);
+  }
+}
+
+.animate-flutter {
+  animation: flutter 4s ease-in-out infinite;
 }
 
 @media print {
@@ -105,3 +149,4 @@
     background: transparent !important;
   }
 }
+

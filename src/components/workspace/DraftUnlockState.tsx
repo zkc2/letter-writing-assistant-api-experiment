@@ -1,6 +1,7 @@
 import React from 'react';
-import { Lock, Unlock, CheckCircle2, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Lock, Unlock, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 import { CaseDesktopStatus, Language } from '../../types';
+import { BureauSealIcon } from '../desktop/BureauIcons';
 
 interface DraftUnlockStateProps {
   status: CaseDesktopStatus;
@@ -23,40 +24,40 @@ export const DraftUnlockState: React.FC<DraftUnlockStateProps> = ({
 
   const statusConfigs = {
     locked: {
-      label: language === 'zh' ? '草稿锁定中' : 'Draft Locked',
-      badgeClass: 'bg-[#F2EDF3] text-[#68616D] border-[#403A45]/30',
+      label: language === 'zh' ? '公文纸静候' : 'Draft Locked',
+      badgeClass: 'bg-[#262433] text-[#b8a9c9] border-[#6f6587]/30',
       icon: Lock,
       desc:
         language === 'zh'
-          ? `需确证 4 项关键要素 (${confirmedCount}/${totalRequired}) 即可解锁草稿`
-          : `Requires 4 confirmed pillars (${confirmedCount}/${totalRequired}) to unlock formal draft`,
+          ? `需确证 4 柱关键案卷 (${confirmedCount}/${totalRequired})，以铺开正式辞呈公文纸`
+          : `Requires 4 confirmed pillars (${confirmedCount}/${totalRequired}) to seal formal letter`,
     },
     needs_confirmation: {
-      label: language === 'zh' ? '需确认事实' : 'Needs Confirmation',
-      badgeClass: 'bg-[#FFF3D6] text-[#B36D14] border-[#F2B35D]',
+      label: language === 'zh' ? '察觉关键线索' : 'Review Pillars',
+      badgeClass: 'bg-[#2a2539] text-[#e6a54f] border-[#e6a54f]/50',
       icon: AlertCircle,
       desc:
         language === 'zh'
-          ? `已发现关键信息，请逐项核准 (${confirmedCount}/${totalRequired})`
-          : `Information discovered, waiting for review (${confirmedCount}/${totalRequired})`,
+          ? `已提取事实碎片，请逐项裁定入卷 (${confirmedCount}/${totalRequired})`
+          : `Memories extracted, awaiting dossier approval (${confirmedCount}/${totalRequired})`,
     },
     ready_to_draft: {
-      label: language === 'zh' ? '可生成草稿' : 'Ready to Draft',
-      badgeClass: 'bg-[#EBF7F1] text-[#3B8C68] border-[#3B8C68]',
+      label: language === 'zh' ? '四柱已成・公文已就' : 'Paper Ready',
+      badgeClass: 'bg-[#23352b] text-[#85d0ad] border-[#4e8b72]/60',
       icon: Unlock,
       desc:
         language === 'zh'
-          ? '4 项关键案卷要素已就绪，辞职信草稿已解锁'
-          : 'All 4 case slots verified! Formal resignation letter unlocked.',
+          ? '四柱案卷全部封存！粗粝记忆已熔铸为体面措辞，随时可审阅定稿'
+          : 'All 4 dossier slots verified! Formal resignation letter unlocked.',
     },
     approved: {
-      label: language === 'zh' ? '终稿已确认' : 'Approved',
-      badgeClass: 'bg-[#EBF7F1] text-[#3B8C68] border-[#3B8C68]',
+      label: language === 'zh' ? '终章・火漆封印' : 'Amber Sealed',
+      badgeClass: 'bg-[#262433] text-[#e6a54f] border-[#e6a54f]/70',
       icon: ShieldCheck,
       desc:
         language === 'zh'
-          ? '文书已通过终审核准，随时可打印与投递'
-          : 'Document approved with full professional standing.',
+          ? '公文兼具尊严与法律防线，琥珀印章已盖，可安心启程'
+          : 'Document approved with dignity and safety. Amber seal stamped.',
     },
   };
 
@@ -68,7 +69,13 @@ export const DraftUnlockState: React.FC<DraftUnlockStateProps> = ({
       <div
         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono-system font-semibold border ${current.badgeClass}`}
       >
-        <IconComponent className="w-3.5 h-3.5" />
+        {status === 'approved' ? (
+          <span className="text-[#e6a54f]">
+            <BureauSealIcon size={13} />
+          </span>
+        ) : (
+          <IconComponent className="w-3.5 h-3.5" />
+        )}
         <span>{current.label}</span>
       </div>
     );
@@ -78,8 +85,8 @@ export const DraftUnlockState: React.FC<DraftUnlockStateProps> = ({
     <div
       className={`rounded-xl border p-3.5 transition-all ${
         isComplete
-          ? 'bg-[#EBF7F1]/60 border-[#BFE2D3]'
-          : 'bg-[#FFFDFC] border-[#403A45]/20 shadow-2xs'
+          ? 'bg-[#E7F3ED]/70 border-[#4E8B72]/40'
+          : 'bg-[#FCFAF6] border-[#6F6587]/20 shadow-xs'
       }`}
     >
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -87,31 +94,35 @@ export const DraftUnlockState: React.FC<DraftUnlockStateProps> = ({
           <div
             className={`w-8 h-8 rounded-lg flex items-center justify-center border ${
               isComplete
-                ? 'bg-[#BFE2D3] text-[#3B8C68] border-[#3B8C68]/40'
-                : 'bg-[#DCD4EA]/40 text-[#403A45] border-[#403A45]/20'
+                ? 'bg-[#B2D8C6] text-[#262433] border-[#4E8B72]/50'
+                : 'bg-[#D8CCE4]/40 text-[#262433] border-[#6F6587]/30'
             }`}
           >
-            <IconComponent className="w-4 h-4" />
+            {status === 'approved' ? (
+              <BureauSealIcon size={18} />
+            ) : (
+              <IconComponent className="w-4 h-4" />
+            )}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-xs sm:text-sm text-[#29252D]">
+              <span className="font-semibold text-xs sm:text-sm text-[#262433]">
                 {current.label}
               </span>
-              <span className="text-[11px] font-mono-system px-2 py-0.5 rounded-full bg-[#F6F0E7] text-[#68616D] border border-[#E2D8C9]">
+              <span className="text-[11px] font-mono-system px-2 py-0.5 rounded-full bg-[#F2ECE1] text-[#655E75] border border-[#6F6587]/20">
                 {confirmedCount} / {totalRequired}
               </span>
             </div>
-            <p className="text-[11px] text-[#68616D] mt-0.5">{current.desc}</p>
+            <p className="text-[11px] text-[#655E75] mt-0.5">{current.desc}</p>
           </div>
         </div>
 
         {isComplete && onProceedToDraft && (
           <button
             onClick={onProceedToDraft}
-            className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#F2B35D] hover:bg-[#e2a249] text-[#29252D] border border-[#403A45]/30 flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#4E8B72] hover:bg-[#3d6f5b] text-[#FCFAF6] text-xs font-mono-system font-bold transition-all shadow-xs cursor-pointer"
           >
-            <span>{language === 'zh' ? '查看辞职信草稿' : 'Open Draft Letter'}</span>
+            <span>{language === 'zh' ? '铺开公文纸审阅' : 'View Draft Letter'}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         )}

@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
 import {
   Sparkles,
-  Heart,
   ShieldCheck,
   AlertCircle,
   X,
-  ChevronRight,
-  Maximize2,
   Minimize2,
+  ChevronRight,
+  Heart,
+  Feather,
 } from 'lucide-react';
-import { CaseDesktopStatus, ConfirmedFactItem, Language } from '../../types';
+import { CaseDesktopStatus, ConfirmedFactItem, Language, WorkspaceSection } from '../../types';
+import { InkMothCompanionSVG } from './InkMothCompanionSVG';
 
 interface CompanionPanelProps {
   status: CaseDesktopStatus;
   confirmedFacts: ConfirmedFactItem[];
   hasConflict?: boolean;
   language: Language;
-  onNavigateSection?: (section: any) => void;
+  onNavigateSection?: (section: WorkspaceSection) => void;
 }
 
 export const CompanionPanel: React.FC<CompanionPanelProps> = ({
@@ -31,32 +32,36 @@ export const CompanionPanel: React.FC<CompanionPanelProps> = ({
 
   if (isDismissed) return null;
 
-  // Determine current guidance
+  // Determine current guidance and chapter state
   const missingPillars = confirmedFacts.filter(
     (f) => !f.value || f.value.trim() === ''
   );
 
-  let companionMood: 'welcome' | 'conflict' | 'missing' | 'privacy' | 'ready' | 'approved' = 'welcome';
-  let messageTitle = language === 'zh' ? '侦探备忘伙伴' : 'Origami Companion';
+  let companionMood: 'welcome' | 'conflict' | 'missing' | 'ready' | 'approved' = 'welcome';
+  let companionTitle = language === 'zh' ? '墨蛾・Bureau Ink Moth' : 'The Ink Moth';
+  let companionSubtitle = language === 'zh' ? '暮色信局的引路灵' : 'Quiet Exit Guide';
   let messageText = '';
 
   if (status === 'approved') {
     companionMood = 'approved';
-    messageTitle = language === 'zh' ? '终稿已核准！' : 'Case Approved!';
+    companionTitle = language === 'zh' ? '墨蛾・终章安澜' : 'The Ink Moth・Sealed';
+    companionSubtitle = language === 'zh' ? '文书已封印并获核准' : 'Safe Passage Granted';
     messageText =
       language === 'zh'
-        ? '文书具备完备的法律体面与进取主旨，体面离开，自信开启新篇章。'
-        : 'Your resignation letter meets the highest professional standards. Clean, dignified, and boundary-safe.';
+        ? '琥珀火漆已凝固，辞职信兼备体面与防线。轻拍双翅，你可以安心走出这段职场暮色，开启清白明亮的下一站。'
+        : 'The amber wax is set. Your resignation stands firm, constructive, and dignified. Fly onward into your next chapter with confidence.';
   } else if (hasConflict) {
     companionMood = 'conflict';
-    messageTitle = language === 'zh' ? '排查到事实冲突' : 'Conflict Detected';
+    companionTitle = language === 'zh' ? '墨蛾・敏锐警觉' : 'The Ink Moth・Alert';
+    companionSubtitle = language === 'zh' ? '触角感知到两处分歧' : 'Contradiction Sensed';
     messageText =
       language === 'zh'
-        ? '注意到交接日期或离职主旨存在两份不同的表述。请在案卷中核准一项，避免辞职信出现逻辑漏洞。'
-        : 'I noticed conflicting dates or statements. Clarify in the case file to keep your letter bulletproof.';
+        ? '扑翅停落：在你的时间线与陈述中，察觉到了日期或原因的自相矛盾。请在案卷中裁定一项真实表述，避免公文留下瑕疵。'
+        : 'My antennae sensed conflicting timelines or statements. Clarify the record in your Case Dossier so your letter remains untarnished.';
   } else if (missingPillars.length > 0 && status !== 'ready_to_draft') {
     companionMood = 'missing';
-    messageTitle = language === 'zh' ? '需要补充关键要素' : 'Pillars Needed';
+    companionTitle = language === 'zh' ? '墨蛾・集字寻音' : 'The Ink Moth・Gathering';
+    companionSubtitle = language === 'zh' ? `尚缺 ${missingPillars.length} 处要素` : `${missingPillars.length} Pillars Unresolved`;
     const names = missingPillars
       .map((m) =>
         m.id === 'whyResigning'
@@ -64,49 +69,50 @@ export const CompanionPanel: React.FC<CompanionPanelProps> = ({
           : m.id === 'badExperiences'
           ? language === 'zh' ? '经历事实' : 'Experiences'
           : m.id === 'noticePeriodOrDate'
-          ? language === 'zh' ? '最后工作日' : 'Notice Date'
-          : language === 'zh' ? '私密界限' : 'Privacy'
+          ? language === 'zh' ? '最后在岗日' : 'Notice Date'
+          : language === 'zh' ? '私密界限' : 'Privacy Boundary'
       )
       .join('、');
     messageText =
       language === 'zh'
-        ? `案卷槽位还需确证：${names}。点击左侧输入或与我对话补充即可解锁草稿。`
-        : `Still gathering evidence for: ${names}. Provide details to unlock the formal draft.`;
+        ? `我正在为你收集这些光阴碎片：${names}。点击对话或时间线补全它们，公文纸便会舒展铺开。`
+        : `Still piecing together your memories for: ${names}. Provide these details in Intake or Timeline to unlock the full letter draft.`;
   } else if (status === 'ready_to_draft') {
     companionMood = 'ready';
-    messageTitle = language === 'zh' ? '案卷确证，草稿已解锁' : 'Draft Ready';
+    companionTitle = language === 'zh' ? '墨蛾・信笺铺就' : 'The Ink Moth・Paper Ready';
+    companionSubtitle = language === 'zh' ? '四柱已立，公文已就' : '4/4 Pillars Complete';
     messageText =
       language === 'zh'
-        ? '4 项关键事实已全部就绪！信件已依据你的经历完成公文化提炼，可前往右侧审阅与核准。'
-        : 'All 4 case slots verified! The formal letter has transformed your facts into a constructive draft.';
+        ? '记忆碎片已全部核准入卷！所有的艰难遭遇已转化为体面的公文化表达，隐私已被锁闭。请轻触右侧文稿，亲自检视与定稿。'
+        : 'All 4 dossier pillars are sealed. Your unfiltered realities have been translated into professional prose. Review your draft now.';
   } else {
     companionMood = 'welcome';
-    messageTitle = language === 'zh' ? '准备梳理你的经历' : 'Welcome to Case Desktop';
+    companionTitle = language === 'zh' ? '墨蛾・暮色初见' : 'The Ink Moth・Greetings';
+    companionSubtitle = language === 'zh' ? '静候你的第一缕思绪' : 'Twilight Bureau Desk';
     messageText =
       language === 'zh'
-        ? '深呼吸。无论经历了多少不顺，我们都会把杂乱事实转化为体面措辞，并严格锁死私密界限。'
-        : 'Take your time. We will turn your raw experiences into polished standing while keeping boundaries strictly protected.';
+        ? '深呼吸。暮色信局在黄昏营业，专为将疲惫、委屈与不公，温和地熔铸成不卑不亢的文字。告诉我你的经历，私密内容绝不会越界。'
+        : 'Take a quiet breath. The Quiet Exit Bureau exists to transform workplace strain into clear, dignified closure. Share freely; boundaries remain sealed.';
   }
 
   // Mini docked badge
   if (isMinimized) {
     return (
-      <div className="fixed bottom-16 right-4 z-40 animate-in fade-in duration-150">
+      <div className="fixed bottom-16 right-4 z-40 animate-in fade-in duration-150 no-print">
         <button
           onClick={() => setIsMinimized(false)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FFFDFC] border-2 border-[#403A45] retro-dock-shadow hover:bg-[#F6F0E7] cursor-pointer text-xs font-mono-system font-bold text-[#29252D]"
-          title="Open Companion"
+          className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#1e1b29]/90 backdrop-blur-md border border-[#e6a54f]/60 hover:border-[#e6a54f] cursor-pointer text-xs font-mono-system font-bold text-[#fbf8f4] shadow-lg hover:shadow-[#e6a54f]/20 transition-all"
+          title="Awaken Ink Moth"
         >
-          {/* Mini Origami Icon */}
-          <span className="text-sm">💌</span>
-          <span>{language === 'zh' ? '侦探伴笔' : 'Companion'}</span>
+          <InkMothCompanionSVG mood={companionMood} size={24} />
+          <span>{language === 'zh' ? '墨蛾伴笔' : 'Ink Moth'}</span>
           <span
             className={`w-2 h-2 rounded-full ${
               companionMood === 'conflict'
-                ? 'bg-[#A94343]'
+                ? 'bg-[#b35858] animate-ping'
                 : companionMood === 'ready' || companionMood === 'approved'
-                ? 'bg-[#3B8C68]'
-                : 'bg-[#F2B35D]'
+                ? 'bg-[#4e8b72]'
+                : 'bg-[#e6a54f]'
             }`}
           />
         </button>
@@ -115,81 +121,70 @@ export const CompanionPanel: React.FC<CompanionPanelProps> = ({
   }
 
   return (
-    <div className="fixed bottom-18 right-4 z-40 max-w-xs sm:max-w-sm w-full animate-in slide-in-from-bottom-2 duration-200">
-      <div className="bg-[#FFFDFC] rounded-2xl border-2 border-[#403A45] retro-window-shadow overflow-hidden">
+    <div className="fixed bottom-18 right-4 z-40 max-w-xs sm:max-w-sm w-full animate-in slide-in-from-bottom-2 duration-200 no-print">
+      <div className="bg-[#1e1b29]/95 backdrop-blur-md rounded-2xl border border-[#6f6587]/40 shadow-2xl overflow-hidden text-[#fbf8f4]">
         {/* Title bar */}
-        <div className="px-3 py-1.5 bg-[#DCD4EA] border-b border-[#403A45] flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs">💌</span>
-            <span className="font-mono-system text-[11px] font-bold text-[#29252D] tracking-wide">
-              {messageTitle}
-            </span>
+        <div className="px-3 py-1.5 bg-[#2a2539] border-b border-[#6f6587]/30 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#e6a54f]" />
+            <div className="flex flex-col">
+              <span className="font-mono-system text-[11px] font-bold text-[#fbf8f4] tracking-wide">
+                {companionTitle}
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setIsMinimized(true)}
-              className="p-1 rounded hover:bg-black/10 text-[#403A45] cursor-pointer"
-              title="Minimize"
+              className="p-1 rounded hover:bg-white/10 text-[#d8cce4] cursor-pointer"
+              title="Rest into desk"
             >
-              <Minimize2 className="w-3 h-3" />
+              <Minimize2 className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setIsDismissed(true)}
-              className="p-1 rounded hover:bg-black/10 text-[#403A45] cursor-pointer"
+              className="p-1 rounded hover:bg-white/10 text-[#d8cce4] cursor-pointer"
               title="Dismiss"
             >
-              <X className="w-3 h-3" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
         {/* Companion Body */}
-        <div className="p-3.5 flex gap-3 items-start bg-radial from-[#F6F0E7]/60 to-[#FFFDFC]">
-          {/* Custom Original Origami Quill & Heart SVG Character */}
-          <div className="shrink-0 relative">
-            <svg
-              width="44"
-              height="44"
-              viewBox="0 0 44 44"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="drop-shadow-xs"
-            >
-              {/* Folded paper body */}
-              <rect x="4" y="8" width="36" height="28" rx="6" fill="#F6F0E7" stroke="#403A45" strokeWidth="1.5" />
-              {/* Envelope flap folds */}
-              <path d="M4 10L22 24L40 10" stroke="#403A45" strokeWidth="1.5" strokeLinejoin="round" />
-              {/* Origami Heart Seal */}
-              <circle cx="22" cy="24" r="6" fill="#E8B8C9" stroke="#403A45" strokeWidth="1.2" />
-              <path
-                d="M22 22.5C21.5 21.5 20 21.5 19.5 22.5C19 23.5 22 25.5 22 25.5C22 25.5 25 23.5 24.5 22.5C24 21.5 22.5 21.5 22 22.5Z"
-                fill="#A94343"
-              />
-              {/* Friendly eyes */}
-              <circle cx="16" cy="19" r="1.2" fill="#29252D" />
-              <circle cx="28" cy="19" r="1.2" fill="#29252D" />
-              {/* Ink feather quill tuck */}
-              <path
-                d="M34 6C36 4 39 4 40 5C41 6 41 9 39 11L33 17"
-                stroke="#B9DDE3"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
+        <div className="p-3.5 flex gap-3 items-start bg-radial from-[#2f2a3e]/40 to-transparent">
+          {/* Animated Ink Moth character with heart seal */}
+          <div className="shrink-0 relative mt-0.5">
+            <InkMothCompanionSVG mood={companionMood} size={52} />
           </div>
 
           {/* Dialogue bubble */}
-          <div className="space-y-1.5 flex-1">
-            <p className="text-xs text-[#29252D] font-sans-clean leading-relaxed">
+          <div className="space-y-1.5 flex-1 min-w-0">
+            <div className="text-[10px] font-mono-system text-[#b8a9c9] tracking-wider uppercase">
+              {companionSubtitle}
+            </div>
+            <p className="text-xs text-[#f7f1e5] font-sans-clean leading-relaxed font-normal">
               {messageText}
             </p>
 
+            {/* Quick action button based on chapter state */}
             {status === 'ready_to_draft' && onNavigateSection && (
               <button
                 onClick={() => onNavigateSection('draft')}
-                className="mt-1 text-[11px] font-mono-system font-bold text-[#3B8C68] hover:underline flex items-center gap-1 cursor-pointer"
+                className="mt-2 text-[11px] font-mono-system font-bold px-2.5 py-1 rounded-lg bg-[#4e8b72]/30 text-[#85d0ad] border border-[#4e8b72]/50 hover:bg-[#4e8b72]/40 transition-colors flex items-center gap-1 cursor-pointer"
               >
-                <span>{language === 'zh' ? '前往审阅文稿 →' : 'Review Draft →'}</span>
+                <span>{language === 'zh' ? '前往审阅辞呈文稿' : 'Review Draft Letter'}</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            {companionMood === 'conflict' && onNavigateSection && (
+              <button
+                onClick={() => onNavigateSection('facts')}
+                className="mt-2 text-[11px] font-mono-system font-bold px-2.5 py-1 rounded-lg bg-[#b35858]/30 text-[#e9a1a1] border border-[#b35858]/50 hover:bg-[#b35858]/40 transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <span>{language === 'zh' ? '前往案卷解决分歧' : 'Resolve in Dossier'}</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             )}
           </div>

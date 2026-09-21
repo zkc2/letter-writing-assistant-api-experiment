@@ -543,7 +543,36 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
         </div>
 
         {/* Closing & Sign-off Block */}
-        <div className="mt-8 space-y-2">
+        <div className="mt-8 space-y-2 relative">
+          {/* Fictional Quiet Exit Bureau Diegetic Amber Wax Seal when approved (no-print so formal export stays clean) */}
+          {(isApproved || letter.isApproved) && !isEditing && (
+            <div className="no-print absolute right-0 -bottom-3 sm:right-6 sm:bottom-0 pointer-events-none select-none flex flex-col items-center rotate-[-4deg] opacity-90">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-dashed border-[#e6a54f] bg-[#e6a54f]/15 backdrop-blur-xs flex flex-col items-center justify-center p-2 text-center shadow-sm">
+                <svg
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="text-[#e6a54f] mb-0.5"
+                >
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
+                  <path
+                    d="M12 7.5C11 6.5 9 6.5 8.2 7.8C7.5 9.2 12 12.5 12 12.5C12 12.5 16.5 9.2 15.8 7.8C15 6.5 13 6.5 12 7.5Z"
+                    fill="currentColor"
+                  />
+                  <path d="M7 16.5L12 14L17 16.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                </svg>
+                <span className="font-mono-system text-[8px] uppercase tracking-wider font-bold text-[#b36d14]">
+                  QUIET EXIT
+                </span>
+                <span className="font-mono-system text-[7px] text-[#b36d14]/80">
+                  SEALED
+                </span>
+              </div>
+            </div>
+          )}
+
           {isEditing ? (
             <div className="max-w-xs space-y-1.5">
               <label className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">

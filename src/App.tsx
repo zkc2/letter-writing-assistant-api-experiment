@@ -28,6 +28,16 @@ import { WorkspaceDock } from './components/desktop/WorkspaceDock';
 import { AppWindow } from './components/desktop/AppWindow';
 import { CompanionPanel } from './components/desktop/CompanionPanel';
 import { SettingsWindow } from './components/desktop/SettingsWindow';
+import { BureauChapterProgress } from './components/desktop/BureauChapterProgress';
+import {
+  BureauFragmentIcon,
+  BureauTimelineIcon,
+  BureauDossierIcon,
+  BureauDraftIcon,
+  BureauSealIcon,
+  BureauArchiveIcon,
+  BureauSettingIcon,
+} from './components/desktop/BureauIcons';
 import { ConflictDialog } from './components/workspace/ConflictDialog';
 import { LetterSheet } from './components/LetterSheet';
 import { StationeryBar } from './components/StationeryBar';
@@ -705,51 +715,51 @@ export default function App() {
     );
   };
 
-  // Section titles & icons mapping
+  // Section titles & icons mapping for Quiet Exit Bureau
   const sectionMeta: Record<
     WorkspaceSection,
-    { title: string; titleEn: string; icon: string; badge?: string }
+    { title: string; titleEn: string; icon: React.ReactNode; badge?: string }
   > = {
     intake: {
       title: '案卷要素摄入 (Intake)',
-      titleEn: 'Intake Dialogue',
-      icon: '💬',
+      titleEn: 'Memory Intake Dialogue',
+      icon: <BureauFragmentIcon size={16} />,
     },
     timeline: {
-      title: '经历与交接时间线 (Timeline)',
+      title: '经历与光阴轨迹 (Timeline)',
       titleEn: 'Experience Timeline',
-      icon: '⏳',
+      icon: <BureauTimelineIcon size={16} />,
       badge: `${timelineEvents.length} events`,
     },
     facts: {
-      title: '确证案卷要素 (Case File)',
+      title: '确证案卷四柱要素 (Case Dossier)',
       titleEn: 'Confirmed Case File',
-      icon: '🗂️',
+      icon: <BureauDossierIcon size={16} />,
       badge: `${confirmedFactsCount}/4`,
     },
     draft: {
       title: '正式辞职信草稿 (Draft Letter)',
-      titleEn: 'Draft Letter Workspace',
-      icon: '📜',
-      badge: desktopStatus === 'approved' ? 'APPROVED' : confirmedFactsCount === 4 ? 'UNLOCKED' : 'LOCKED',
+      titleEn: 'Formal Draft Workspace',
+      icon: desktopStatus === 'approved' ? <BureauSealIcon size={16} /> : <BureauDraftIcon size={16} />,
+      badge: desktopStatus === 'approved' ? 'SEALED' : confirmedFactsCount === 4 ? 'READY' : 'LOCKED',
     },
     history: {
-      title: '历史案卷库 (Case History)',
+      title: '案卷档案库 (Case History)',
       titleEn: 'Case History',
-      icon: '📁',
+      icon: <BureauArchiveIcon size={16} />,
       badge: `${drafts.length} saved`,
     },
     settings: {
-      title: '排版与公文设置 (Settings)',
-      titleEn: 'Letter & Case Settings',
-      icon: '⚙️',
+      title: '公文设色与格式 (Settings)',
+      titleEn: 'Letter Style Settings',
+      icon: <BureauSettingIcon size={16} />,
     },
   };
 
   const currentMeta = sectionMeta[workspaceSection];
 
   return (
-    <div className="min-h-screen bg-pastel-wallpaper text-[#29252D] flex flex-col font-sans-clean select-none pb-20 md:pb-16">
+    <div className="min-h-screen bg-pastel-wallpaper text-[#262433] flex flex-col font-sans-clean select-none pb-20 md:pb-16">
       {/* 1. Top OS System Bar */}
       <SystemBar
         status={desktopStatus}
@@ -766,13 +776,13 @@ export default function App() {
 
       {/* Mobile Workspace / Live Letter Toggle Pills */}
       <div className="md:hidden px-3 pt-2 pb-1 no-print">
-        <div className="flex bg-[#F6F0E7] p-1 rounded-xl border border-[#403A45]/30 text-xs">
+        <div className="flex bg-[#1e1b29] p-1 rounded-xl border border-[#6f6587]/30 text-xs">
           <button
             onClick={() => setActiveMobileView('workspace')}
             className={`flex-1 py-1.5 rounded-lg font-mono-system font-bold flex items-center justify-center gap-1.5 transition-all min-h-[38px] ${
               activeMobileView === 'workspace'
-                ? 'bg-[#FFFDFC] text-[#29252D] shadow-xs border border-[#403A45]/20'
-                : 'text-[#68616D]'
+                ? 'bg-[#2a2539] text-[#e6a54f] shadow-xs border border-[#e6a54f]/40'
+                : 'text-[#b8a9c9]'
             }`}
           >
             <span>{currentMeta.icon}</span>
@@ -782,14 +792,14 @@ export default function App() {
             onClick={() => setActiveMobileView('letter')}
             className={`flex-1 py-1.5 rounded-lg font-mono-system font-bold flex items-center justify-center gap-1.5 transition-all min-h-[38px] ${
               activeMobileView === 'letter'
-                ? 'bg-[#FFFDFC] text-[#29252D] shadow-xs border border-[#403A45]/20'
-                : 'text-[#68616D]'
+                ? 'bg-[#2a2539] text-[#e6a54f] shadow-xs border border-[#e6a54f]/40'
+                : 'text-[#b8a9c9]'
             }`}
           >
-            <span>📄</span>
+            <span><BureauDraftIcon size={14} /></span>
             <span>{language === 'zh' ? '辞职公文纸' : 'Letter Sheet'}</span>
             {currentLetter.isApproved && (
-              <span className="w-2 h-2 rounded-full bg-[#3B8C68]" />
+              <span className="w-2 h-2 rounded-full bg-[#4e8b72]" />
             )}
           </button>
         </div>
@@ -797,6 +807,15 @@ export default function App() {
 
       {/* 2. Main Desktop Stage: Dual Floating Windows */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex flex-col">
+        {/* Narrative Bureau 5-Chapter Progress Ribbon */}
+        <BureauChapterProgress
+          currentSection={workspaceSection}
+          onSelectSection={(sec) => setWorkspaceSection(sec)}
+          status={desktopStatus}
+          confirmedCount={confirmedFactsCount}
+          language={language}
+        />
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start flex-1">
           {/* Left Window: Active Investigation Application Window */}
           <div

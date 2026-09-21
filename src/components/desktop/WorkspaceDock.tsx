@@ -1,20 +1,18 @@
 import React, { useState } from 'react';
 import {
-  MessageSquareCode,
-  GitCommit,
-  FolderLock,
-  FileSignature,
-  History,
-  Sliders,
   MoreHorizontal,
-  Lock,
-  CheckCircle2,
-  Sparkles,
-  Printer,
   Info,
 } from 'lucide-react';
 import { WorkspaceSection, CaseDesktopStatus, Language } from '../../types';
-import { getTranslation } from '../../i18n';
+import {
+  BureauFragmentIcon,
+  BureauTimelineIcon,
+  BureauDossierIcon,
+  BureauDraftIcon,
+  BureauSealIcon,
+  BureauArchiveIcon,
+  BureauSettingIcon,
+} from './BureauIcons';
 
 interface WorkspaceDockProps {
   activeSection: WorkspaceSection;
@@ -39,14 +37,13 @@ export const WorkspaceDock: React.FC<WorkspaceDockProps> = ({
   onOpenSaved,
   onOpenSettings,
 }) => {
-  const t = getTranslation(language);
   const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
 
   const mainApps: {
     id: WorkspaceSection;
     label: string;
     labelEn: string;
-    icon: string;
+    icon: React.ComponentType<{ className?: string; size?: number }>;
     badge?: string | number;
     badgeColor?: string;
   }[] = [
@@ -54,75 +51,78 @@ export const WorkspaceDock: React.FC<WorkspaceDockProps> = ({
       id: 'intake',
       label: '要素摄入',
       labelEn: 'Intake',
-      icon: '💬',
+      icon: BureauFragmentIcon,
     },
     {
       id: 'timeline',
-      label: '经历时间线',
+      label: '经历光阴',
       labelEn: 'Timeline',
-      icon: '⏳',
+      icon: BureauTimelineIcon,
     },
     {
       id: 'facts',
       label: '确证案卷',
-      labelEn: 'Case File',
-      icon: '🗂️',
+      labelEn: 'Dossier',
+      icon: BureauDossierIcon,
       badge: `${confirmedCount}/4`,
-      badgeColor: confirmedCount === 4 ? 'bg-[#BFE2D3] text-[#1B5E3F]' : 'bg-[#FFF3D6] text-[#B36D14]',
+      badgeColor: confirmedCount === 4 ? 'bg-[#4e8b72]/40 text-[#85d0ad] border-[#4e8b72]' : 'bg-[#e6a54f]/30 text-[#e6a54f] border-[#e6a54f]/60',
     },
     {
       id: 'draft',
-      label: '辞职文稿',
+      label: '辞呈文稿',
       labelEn: 'Draft Letter',
-      icon: status === 'approved' ? '📜' : confirmedCount === 4 ? '✍️' : '🔒',
-      badge: status === 'approved' ? '✓' : confirmedCount === 4 ? 'UNLOCKED' : 'LOCKED',
+      icon: status === 'approved' ? BureauSealIcon : BureauDraftIcon,
+      badge: status === 'approved' ? 'SEALED' : confirmedCount === 4 ? 'READY' : 'LOCKED',
       badgeColor:
         status === 'approved'
-          ? 'bg-[#BFE2D3] text-[#1B5E3F]'
+          ? 'bg-[#4e8b72]/40 text-[#85d0ad] border-[#4e8b72]'
           : confirmedCount === 4
-          ? 'bg-[#BFE2D3] text-[#1B5E3F]'
-          : 'bg-[#F2EDF3] text-[#68616D]',
+          ? 'bg-[#e6a54f]/30 text-[#e6a54f] border-[#e6a54f]/60'
+          : 'bg-[#353043] text-[#b8a9c9] border-[#6f6587]/30',
     },
     {
       id: 'history',
-      label: '案卷历史',
-      labelEn: 'Case History',
-      icon: '📁',
+      label: '案卷档案',
+      labelEn: 'Archives',
+      icon: BureauArchiveIcon,
       badge: savedCount > 0 ? savedCount : undefined,
     },
     {
       id: 'settings',
-      label: '排版设置',
-      labelEn: 'Settings',
-      icon: '⚙️',
+      label: '公文设色',
+      labelEn: 'Letter Style',
+      icon: BureauSettingIcon,
     },
   ];
 
   return (
     <>
-      {/* Desktop Floating Bottom Dock */}
+      {/* Desktop Floating Bottom Dock - Twilight Desk Bar */}
       <nav
         aria-label="Desktop Workspace Dock"
-        className="hidden md:flex fixed bottom-3 left-1/2 -translate-x-1/2 z-40 bg-[#FFFDFC]/95 backdrop-blur-md border-2 border-[#403A45] rounded-2xl px-2 py-1.5 retro-dock-shadow items-center gap-1 font-sans-clean no-print"
+        className="hidden md:flex fixed bottom-3 left-1/2 -translate-x-1/2 z-40 bg-[#1e1b29]/95 backdrop-blur-md border border-[#6f6587]/40 rounded-2xl px-2.5 py-1.5 retro-dock-shadow items-center gap-1 font-sans-clean no-print text-[#FCFAF6]"
       >
         {mainApps.map((app) => {
           const isActive = activeSection === app.id;
+          const IconComponent = app.icon;
           return (
             <button
               key={app.id}
               onClick={() => onSelectSection(app.id)}
-              className={`relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer group ${
+              className={`relative flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer group ${
                 isActive
-                  ? 'bg-[#DCD4EA] text-[#29252D] font-bold shadow-xs'
-                  : 'text-[#68616D] hover:bg-[#F6F0E7] hover:text-[#29252D]'
+                  ? 'bg-[#2f2a3e] text-[#fbf8f4] font-bold shadow-sm ring-1 ring-[#e6a54f]/60'
+                  : 'text-[#d8cce4] hover:bg-[#282436] hover:text-[#fbf8f4]'
               }`}
             >
-              <div className="relative text-lg leading-none">
-                <span>{app.icon}</span>
+              <div className="relative leading-none">
+                <span className={`p-1 rounded-md transition-colors ${isActive ? 'text-[#e6a54f]' : 'text-[#b8a9c9]'}`}>
+                  <IconComponent size={18} />
+                </span>
                 {app.badge !== undefined && (
                   <span
-                    className={`absolute -top-1.5 -right-3 text-[9px] font-mono-system font-bold px-1 rounded-full border border-[#403A45]/20 ${
-                      app.badgeColor || 'bg-[#F2EDF3] text-[#29252D]'
+                    className={`absolute -top-2 -right-3 text-[9px] font-mono-system font-bold px-1.5 py-0.2 rounded-full border ${
+                      app.badgeColor || 'bg-[#353043] text-[#FCFAF6] border-[#6f6587]/40'
                     }`}
                   >
                     {app.badge}
@@ -133,9 +133,9 @@ export const WorkspaceDock: React.FC<WorkspaceDockProps> = ({
                 {language === 'zh' ? app.label : app.labelEn}
               </span>
 
-              {/* Active Indicator Dot */}
+              {/* Active Indicator Amber Pip */}
               {isActive && (
-                <span className="w-1.5 h-1.5 rounded-full bg-[#B36D14] absolute -bottom-1" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#e6a54f] absolute -bottom-1" />
               )}
             </button>
           );
@@ -145,22 +145,23 @@ export const WorkspaceDock: React.FC<WorkspaceDockProps> = ({
       {/* Mobile Sticky Bottom Navigation (Max 4 items + More) */}
       <nav
         aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FFFDFC] border-t-2 border-[#403A45] px-2 py-1 flex items-center justify-around no-print"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#1e1b29] border-t border-[#353043] px-2 py-1 flex items-center justify-around no-print text-[#FCFAF6]"
       >
         {mainApps.slice(0, 4).map((app) => {
           const isActive = activeSection === app.id;
+          const IconComponent = app.icon;
           return (
             <button
               key={app.id}
               onClick={() => onSelectSection(app.id)}
               className={`flex-1 flex flex-col items-center py-1 transition-colors min-h-[44px] justify-center ${
-                isActive ? 'text-[#B36D14] font-bold' : 'text-[#68616D]'
+                isActive ? 'text-[#e6a54f] font-bold' : 'text-[#b8a9c9]'
               }`}
             >
-              <div className="relative text-base">
-                <span>{app.icon}</span>
+              <div className="relative">
+                <IconComponent size={18} />
                 {app.badge !== undefined && (
-                  <span className="absolute -top-1 -right-2 text-[8px] font-mono-system font-bold px-1 rounded-full bg-[#DCD4EA] text-[#29252D]">
+                  <span className="absolute -top-1.5 -right-2 text-[8px] font-mono-system font-bold px-1 rounded-full bg-[#2f2a3e] text-[#e6a54f] border border-[#e6a54f]/50">
                     {app.badge}
                   </span>
                 )}
@@ -178,8 +179,8 @@ export const WorkspaceDock: React.FC<WorkspaceDockProps> = ({
             onClick={() => setIsMobileMoreOpen(!isMobileMoreOpen)}
             className={`flex flex-col items-center py-1 ${
               isMobileMoreOpen || activeSection === 'history' || activeSection === 'settings'
-                ? 'text-[#B36D14] font-bold'
-                : 'text-[#68616D]'
+                ? 'text-[#e6a54f] font-bold'
+                : 'text-[#b8a9c9]'
             }`}
           >
             <MoreHorizontal className="w-5 h-5" />
@@ -190,15 +191,15 @@ export const WorkspaceDock: React.FC<WorkspaceDockProps> = ({
 
           {/* More popup */}
           {isMobileMoreOpen && (
-            <div className="absolute bottom-12 right-2 w-48 bg-[#FFFDFC] rounded-xl border-2 border-[#403A45] retro-dock-shadow py-1 z-50 text-xs">
+            <div className="absolute bottom-12 right-2 w-48 bg-[#262433] rounded-xl border border-[#6f6587]/40 retro-dock-shadow py-1 z-50 text-xs text-[#FCFAF6]">
               <button
                 onClick={() => {
                   setIsMobileMoreOpen(false);
                   onSelectSection('history');
                 }}
-                className="w-full px-3 py-2 text-left hover:bg-[#F6F0E7] flex items-center gap-2 text-[#29252D]"
+                className="w-full px-3 py-2 text-left hover:bg-[#353043] flex items-center gap-2 cursor-pointer"
               >
-                <span>📁</span>
+                <BureauArchiveIcon size={16} />
                 <span className="font-mono-system">
                   {language === 'zh' ? '案卷历史' : 'Case History'}
                 </span>
@@ -208,11 +209,11 @@ export const WorkspaceDock: React.FC<WorkspaceDockProps> = ({
                   setIsMobileMoreOpen(false);
                   onSelectSection('settings');
                 }}
-                className="w-full px-3 py-2 text-left hover:bg-[#F6F0E7] flex items-center gap-2 text-[#29252D]"
+                className="w-full px-3 py-2 text-left hover:bg-[#353043] flex items-center gap-2 cursor-pointer"
               >
-                <span>⚙️</span>
+                <BureauSettingIcon size={16} />
                 <span className="font-mono-system">
-                  {language === 'zh' ? '排版设置' : 'Settings'}
+                  {language === 'zh' ? '公文设色' : 'Letter Style'}
                 </span>
               </button>
               {onOpenAbout && (
@@ -221,11 +222,11 @@ export const WorkspaceDock: React.FC<WorkspaceDockProps> = ({
                     setIsMobileMoreOpen(false);
                     onOpenAbout();
                   }}
-                  className="w-full px-3 py-2 text-left hover:bg-[#F6F0E7] flex items-center gap-2 text-[#29252D] border-t border-[#403A45]/10"
+                  className="w-full px-3 py-2 text-left hover:bg-[#353043] flex items-center gap-2 border-t border-[#353043] cursor-pointer"
                 >
-                  <Info className="w-4 h-4 text-[#68616D]" />
+                  <Info className="w-4 h-4 text-[#b8a9c9]" />
                   <span className="font-mono-system">
-                    {language === 'zh' ? '系统说明' : 'About System'}
+                    {language === 'zh' ? '信局机制' : 'About Bureau'}
                   </span>
                 </button>
               )}
