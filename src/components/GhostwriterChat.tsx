@@ -41,6 +41,8 @@ interface GhostwriterChatProps {
   onResetSession: () => void;
   currentStep: InteractionStep;
   language: Language;
+  onOpenTemplates?: () => void;
+  onOpenCaseForm?: () => void;
 }
 
 export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
@@ -56,6 +58,8 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
   onResetSession,
   currentStep,
   language,
+  onOpenTemplates,
+  onOpenCaseForm,
 }) => {
   const [inputText, setInputText] = useState('');
   const [showInputsTracker, setShowInputsTracker] = useState(true);
@@ -164,6 +168,17 @@ export const GhostwriterChat: React.FC<GhostwriterChatProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5">
+          {onOpenTemplates && (
+            <button
+              onClick={onOpenTemplates}
+              className="px-2.5 py-1 text-stone-600 hover:text-stone-900 bg-white hover:bg-stone-100 border border-stone-200 rounded-lg transition-colors text-xs flex items-center gap-1 cursor-pointer shadow-2xs"
+              title={t.nav.scenarios}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span className="hidden sm:inline text-[11px] font-medium">{t.nav.scenarios}</span>
+            </button>
+          )}
+
           <button
             onClick={onResetSession}
             title={t.chat.newSession}

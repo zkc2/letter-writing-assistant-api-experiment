@@ -1,10 +1,11 @@
-import { Language, LetterLanguageOption } from './types';
+import { Language, LetterLanguageOption, EventCategory } from './types';
 
 export interface TranslationSchema {
   // Common & Header
   appName: string;
   appSubtitle: string;
   appBadge: string;
+  workspaceBadge: string;
   nav: {
     startNew: string;
     newCase: string;
@@ -16,6 +17,130 @@ export interface TranslationSchema {
     readyBadge: string;
     mobileChatTab: string;
     mobileLetterTab: string;
+    startFreshOption: string;
+    structuredFormOption: string;
+    cleanSlateConfirm: string;
+  };
+  // Case Workspace Tabs & Modules
+  workspace: {
+    sections: {
+      intake: string;
+      timeline: string;
+      facts: string;
+      draft: string;
+    };
+    intakeSubtitle: string;
+    timelineSubtitle: string;
+    factsSubtitle: string;
+    draftSubtitle: string;
+    timeline: {
+      title: string;
+      badge: string;
+      addEvent: string;
+      emptyTitle: string;
+      emptyDesc: string;
+      dateNotProvided: string;
+      categories: Record<EventCategory, string>;
+      statuses: {
+        unconfirmed: string;
+        needs_confirmation: string;
+        confirmed: string;
+      };
+      privacy: {
+        include: string;
+        background: string;
+        private: string;
+        privateBadge: string;
+      };
+      actions: {
+        confirm: string;
+        markNeedsReview: string;
+        edit: string;
+        delete: string;
+        moveUp: string;
+        moveDown: string;
+      };
+      newEventTitle: string;
+      summaryPlaceholder: string;
+      datePlaceholder: string;
+      save: string;
+      cancel: string;
+    };
+    caseFile: {
+      title: string;
+      badge: string;
+      description: string;
+      gateSummary: (captured: number, total: number) => string;
+      gateReady: string;
+      gateWaiting: string;
+      privacyNotice: string;
+      statusLabels: {
+        missing: string;
+        needs_confirmation: string;
+        confirmed: string;
+        private: string;
+        conflict: string;
+      };
+      privacyControls: {
+        label: string;
+        include: string;
+        background: string;
+        private: string;
+        excludedBadge: string;
+      };
+      quickConfirm: string;
+      editFact: string;
+    };
+    wording: {
+      title: string;
+      subtitle: string;
+      originalHeader: string;
+      professionalHeader: string;
+      accept: string;
+      accepted: string;
+      edit: string;
+      keepPrivate: string;
+      exclude: string;
+      addTransformation: string;
+      originalPlaceholder: string;
+      professionalPlaceholder: string;
+    };
+    conflict: {
+      bannerTitle: string;
+      blockingNotice: string;
+      resolveBtn: string;
+      chooseA: string;
+      chooseB: string;
+      resolvedBadge: string;
+    };
+    draftSection: {
+      title: string;
+      readinessTitle: string;
+      gateStatus: string;
+      traceabilityTitle: string;
+      traceabilityDesc: string;
+      whyIncluded: string;
+      rewrittenBadge: string;
+      directInputBadge: string;
+      sourceFactLabel: string;
+      versionHistoryTitle: string;
+      checkpoints: {
+        created: string;
+        user_edited: string;
+        ai_refined: string;
+        approved: string;
+      };
+      viewVersion: string;
+      restoreVersion: string;
+      compareChanges: string;
+      approvedBadge: string;
+      approveButton: string;
+      openAudit: string;
+      compareModalTitle: string;
+      currentTextLabel: string;
+      previousTextLabel: string;
+      closeModal: string;
+    };
   };
   // Language Switcher
   langSwitcher: {
@@ -305,6 +430,7 @@ export const TRANSLATIONS: Record<Language, TranslationSchema> = {
     appName: 'Resignation Ghostwriter',
     appSubtitle: 'Leave Professionally on Your Own Terms',
     appBadge: 'Supportive Writing Assistant',
+    workspaceBadge: 'Case Workspace',
     nav: {
       startNew: 'Start Fresh',
       newCase: 'New Case Intake',
@@ -316,6 +442,137 @@ export const TRANSLATIONS: Record<Language, TranslationSchema> = {
       readyBadge: 'Ready to Submit',
       mobileChatTab: 'Ghostwriter',
       mobileLetterTab: 'Letter Sheet',
+      startFreshOption: 'Start Clean Case (Reset)',
+      structuredFormOption: 'Guided Intake Wizard',
+      cleanSlateConfirm: 'Start fresh case? All current case inputs and drafts will be archived in Drafts.',
+    },
+    workspace: {
+      sections: {
+        intake: 'Intake',
+        timeline: 'Timeline',
+        facts: 'Confirmed Facts',
+        draft: 'Draft',
+      },
+      intakeSubtitle: 'Conversational reflection and initial workplace experience extraction',
+      timelineSubtitle: 'Chronological event cards extracted from your workplace experiences',
+      factsSubtitle: 'The 4 confirmed facts, privacy boundaries, and wording transformation',
+      draftSubtitle: 'Live letter status, source traceability, and version checkpoints',
+      timeline: {
+        title: 'Experience Timeline',
+        badge: 'Structured Events',
+        addEvent: 'Add Event',
+        emptyTitle: 'No events logged yet',
+        emptyDesc: 'Share your workplace experiences in Intake to automatically generate timeline event cards, or click Add Event.',
+        dateNotProvided: 'Date not provided',
+        categories: {
+          workload: 'Workload & Hours',
+          communication: 'Communication',
+          experience: 'Workplace Experience',
+          career: 'Career Development',
+          decision: 'Resignation Decision',
+          notice: 'Notice & Handover',
+          private: 'Private Context',
+        },
+        statuses: {
+          unconfirmed: 'Unconfirmed',
+          needs_confirmation: 'Needs Review',
+          confirmed: 'Confirmed',
+        },
+        privacy: {
+          include: 'Include in letter',
+          background: 'Background context only',
+          private: 'Keep private (Excluded)',
+          privateBadge: 'Excluded from letter',
+        },
+        actions: {
+          confirm: 'Confirm Event',
+          markNeedsReview: 'Mark Needs Review',
+          edit: 'Edit',
+          delete: 'Delete',
+          moveUp: 'Move Up',
+          moveDown: 'Move Down',
+        },
+        newEventTitle: 'New Timeline Event',
+        summaryPlaceholder: 'Describe what happened (e.g. Working hours became unpredictable)',
+        datePlaceholder: 'Date or period (e.g. October 2, 2026 or leave blank)',
+        save: 'Save Event',
+        cancel: 'Cancel',
+      },
+      caseFile: {
+        title: 'Confirmed Case File',
+        badge: '4/4 Required Gate',
+        description: 'All 4 required case facts must be confirmed and conflicts resolved before drafting.',
+        gateSummary: (captured, total) => `${captured} / ${total} Gate Complete`,
+        gateReady: 'All 4 facts confirmed & ready for drafting',
+        gateWaiting: 'Awaiting confirmation of all 4 case facts',
+        privacyNotice: 'Sensitive facts marked private are guaranteed never to appear in the letter.',
+        statusLabels: {
+          missing: 'Missing',
+          needs_confirmation: 'Needs Review',
+          confirmed: 'Confirmed',
+          private: 'Private & Excluded',
+          conflict: 'Conflict Detected',
+        },
+        privacyControls: {
+          label: 'Privacy Setting',
+          include: 'Include in letter',
+          background: 'Use only as background context',
+          private: 'Keep private and never include',
+          excludedBadge: 'Excluded from letter',
+        },
+        quickConfirm: 'Confirm Fact',
+        editFact: 'Edit',
+      },
+      wording: {
+        title: 'Original Experience → Professional Wording',
+        subtitle: 'Transform raw or emotionally charged workplace experiences into dignified, constructive phrasing.',
+        originalHeader: 'Original Experience (Raw / Emotional)',
+        professionalHeader: 'Professional Wording (Editable Suggestion)',
+        accept: 'Accept Wording',
+        accepted: 'Wording Accepted',
+        edit: 'Edit Wording',
+        keepPrivate: 'Keep as Private Context',
+        exclude: 'Exclude Completely',
+        addTransformation: 'Add Custom Comparison',
+        originalPlaceholder: 'Original statement (e.g. My manager was condescending)',
+        professionalPlaceholder: 'Suggested professional alternative (e.g. Seeking closer alignment in leadership communication)',
+      },
+      conflict: {
+        bannerTitle: 'Contradiction / Conflict Detected',
+        blockingNotice: 'Drafting is paused until this conflict is clarified so your letter remains 100% credible.',
+        resolveBtn: 'Resolve Conflict',
+        chooseA: 'Use Option A',
+        chooseB: 'Use Option B',
+        resolvedBadge: 'Conflict Resolved',
+      },
+      draftSection: {
+        title: 'Resignation Draft & Quality Gate',
+        readinessTitle: 'Draft Status & Confirmation Gate',
+        gateStatus: 'All 4 core facts validated',
+        traceabilityTitle: 'Source Traceability',
+        traceabilityDesc: 'Click any paragraph in the letter to view its underlying confirmed facts and transformation logic.',
+        whyIncluded: 'Why is this included?',
+        rewrittenBadge: 'Professionally Rewritten',
+        directInputBadge: 'Direct User Input',
+        sourceFactLabel: 'Confirmed Source Fact:',
+        versionHistoryTitle: 'Draft Version History & Checkpoints',
+        checkpoints: {
+          created: 'Draft Created',
+          user_edited: 'User Edited',
+          ai_refined: 'AI Refined',
+          approved: 'User Approved',
+        },
+        viewVersion: 'View',
+        restoreVersion: 'Restore Version',
+        compareChanges: 'Compare Changes',
+        approvedBadge: 'Approved (Step 5)',
+        approveButton: 'Approve This Draft',
+        openAudit: 'Run Etiquette Audit',
+        compareModalTitle: 'Version Comparison',
+        currentTextLabel: 'Current Version',
+        previousTextLabel: 'Selected Previous Version',
+        closeModal: 'Close Comparison',
+      },
     },
     langSwitcher: {
       label: 'EN / 中文',
@@ -686,6 +943,7 @@ export const TRANSLATIONS: Record<Language, TranslationSchema> = {
     appName: '辞职信代笔助手',
     appSubtitle: '以体面尊严的方式，按自己的意愿从容告别',
     appBadge: '站在你这边的写作助手',
+    workspaceBadge: '个案工作台',
     nav: {
       startNew: '开启新篇',
       newCase: '新个案录入',
@@ -697,6 +955,137 @@ export const TRANSLATIONS: Record<Language, TranslationSchema> = {
       readyBadge: '可直接提交',
       mobileChatTab: '代笔助手',
       mobileLetterTab: '辞职信文稿',
+      startFreshOption: '开启全新个案 (清空并重置)',
+      structuredFormOption: '结构化录入向导',
+      cleanSlateConfirm: '确定开启全新个案吗？当前个案的所有输入与文稿将归档至草稿箱中。',
+    },
+    workspace: {
+      sections: {
+        intake: '摄入与倾诉',
+        timeline: '经历时间线',
+        facts: '确认事实与边界',
+        draft: '信件文稿与核准',
+      },
+      intakeSubtitle: '对话倾听、共情提炼与原始职场经历摄入',
+      timelineSubtitle: '从你的经历中提取的结构化时间线事件卡片',
+      factsSubtitle: '4 项已确认核心事实、隐私边界与专业措辞对照',
+      draftSubtitle: '辞职信实时状态、来源溯源与版本检查点',
+      timeline: {
+        title: '职场经历时间线',
+        badge: '结构化事件',
+        addEvent: '添加事件',
+        emptyTitle: '暂无时间线事件',
+        emptyDesc: '在摄入对话中分享你的职场经历即可自动提取事件卡片，或点击上方「添加事件」手动建立。',
+        dateNotProvided: '未提供具体日期',
+        categories: {
+          workload: '工作负荷与时长',
+          communication: '沟通与管理',
+          experience: '职场经历与遭遇',
+          career: '职业发展受限',
+          decision: '辞职决断',
+          notice: '通知期与交接',
+          private: '私密背景信息',
+        },
+        statuses: {
+          unconfirmed: '未确认',
+          needs_confirmation: '待核对',
+          confirmed: '已确认',
+        },
+        privacy: {
+          include: '纳入辞职信',
+          background: '仅作背景参考',
+          private: '保持私密 (绝不透露)',
+          privateBadge: '信件排除项',
+        },
+        actions: {
+          confirm: '确认此事件',
+          markNeedsReview: '标记待核对',
+          edit: '编辑',
+          delete: '删除',
+          moveUp: '上移',
+          moveDown: '下移',
+        },
+        newEventTitle: '添加时间线事件',
+        summaryPlaceholder: '描述事件经过（如：加班严重无规律、未予晋升）',
+        datePlaceholder: '发生时间或阶段（如：2026年10月2日，留空则为未提供）',
+        save: '保存事件',
+        cancel: '取消',
+      },
+      caseFile: {
+        title: '已确认个案档案',
+        badge: '4/4 门槛检验',
+        description: '在正式起草前，必须确认全部 4 项核心要素并化解所有潜在冲突。',
+        gateSummary: (captured, total) => `${captured} / ${total} 准入检验达成`,
+        gateReady: '4 项要素均已确认，具备起草条件',
+        gateWaiting: '等待确认全部 4 项个案要素',
+        privacyNotice: '标记为私密的敏感信息承诺绝不写入辞职信正文中。',
+        statusLabels: {
+          missing: '缺失',
+          needs_confirmation: '待核对',
+          confirmed: '已确认',
+          private: '私密排除项',
+          conflict: '检测到冲突',
+        },
+        privacyControls: {
+          label: '隐私边界控制',
+          include: '纳入辞职信',
+          background: '仅作幕后背景参考',
+          private: '保持私密绝不透露',
+          excludedBadge: '信件排除项',
+        },
+        quickConfirm: '确认此事实',
+        editFact: '编辑',
+      },
+      wording: {
+        title: '原始真实经历 → 专业得体表述',
+        subtitle: '将带情绪、易引发冲突的经历，转化为体面克制、无可指摘的职场措辞。',
+        originalHeader: '原始倾诉经历（未经修饰/情绪宣泄）',
+        professionalHeader: '建议专业措辞（可自由编辑）',
+        accept: '采纳此措辞',
+        accepted: '已采纳',
+        edit: '编辑建议措辞',
+        keepPrivate: '保留为私密背景',
+        exclude: '完全排除不予提及',
+        addTransformation: '新增对照项',
+        originalPlaceholder: '原始说法（如：领导天天当众贬低我）',
+        professionalPlaceholder: '专业替代表述（如：寻求沟通风格更具支持性与成长性的发展空间）',
+      },
+      conflict: {
+        bannerTitle: '检测到矛盾或冲突项',
+        blockingNotice: '在化解此冲突之前起草已暂停，以确保最终辞职信 100% 严谨可信。',
+        resolveBtn: '化解冲突',
+        chooseA: '采纳选项 A',
+        chooseB: '采纳选项 B',
+        resolvedBadge: '冲突已化解',
+      },
+      draftSection: {
+        title: '辞职信文稿与质检门槛',
+        readinessTitle: '起草就绪状态与确认门槛',
+        gateStatus: '4 项核心要素均已验证通过',
+        traceabilityTitle: '来源溯源追踪',
+        traceabilityDesc: '点击信件中的任一片段，查看其对应的已确认事实依据与措辞转化逻辑。',
+        whyIncluded: '为何包含此句？',
+        rewrittenBadge: '专业转译提炼',
+        directInputBadge: '源自用户直接陈述',
+        sourceFactLabel: '对应事实依据：',
+        versionHistoryTitle: '版本历史与检查点',
+        checkpoints: {
+          created: '初稿生成',
+          user_edited: '用户手动修改',
+          ai_refined: 'AI 深度润色',
+          approved: '用户最终确认',
+        },
+        viewVersion: '查看版本',
+        restoreVersion: '恢复此版本',
+        compareChanges: '对比版本差异',
+        approvedBadge: '已确认就绪 (第5步)',
+        approveButton: '确认并批准此稿件',
+        openAudit: '运行职场礼仪审查',
+        compareModalTitle: '版本变更对比',
+        currentTextLabel: '当前版本文稿',
+        previousTextLabel: '历史版本文稿',
+        closeModal: '关闭对比',
+      },
     },
     langSwitcher: {
       label: 'EN / 中文',

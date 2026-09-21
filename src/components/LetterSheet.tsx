@@ -28,6 +28,9 @@ interface LetterSheetProps {
   isApproved?: boolean;
   language: Language;
   onPrint?: () => void;
+  onOpenAssistant?: () => void;
+  selectedParagraphIndex?: number | null;
+  onSelectParagraph?: (index: number | null) => void;
 }
 
 export const LetterSheet: React.FC<LetterSheetProps> = ({
@@ -38,6 +41,9 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
   isApproved,
   language,
   onPrint,
+  onOpenAssistant,
+  selectedParagraphIndex,
+  onSelectParagraph,
 }) => {
   const [copied, setCopied] = useState(false);
   const [localPrintBlocked, setLocalPrintBlocked] = useState<string | null>(null);
@@ -228,6 +234,17 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
 
         {/* Action buttons */}
         <div className="flex items-center gap-1.5">
+          {onOpenAssistant && (
+            <button
+              onClick={onOpenAssistant}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 shadow-2xs transition-colors cursor-pointer"
+              title={t.nav.polishAudit}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+              <span className="hidden sm:inline">{t.nav.polishAudit}</span>
+            </button>
+          )}
+
           <button
             onClick={handleCopy}
             className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-white hover:bg-stone-50 text-stone-700 border border-stone-200 shadow-2xs transition-colors cursor-pointer"
@@ -490,11 +507,27 @@ export const LetterSheet: React.FC<LetterSheetProps> = ({
           ) : (
             <div className="space-y-4 text-stone-800 leading-relaxed whitespace-pre-line text-left">
               {bodyParagraphs.length > 0 ? (
-                bodyParagraphs.map((para, idx) => (
-                  <p key={idx} className="leading-relaxed">
-                    {para}
-                  </p>
-                ))
+                bodyParagraphs.map((para, idx) => {
+                  const isSelected = selectedParagraphIndex === idx;
+                  return (
+                    <p
+                      key={idx}
+                      onClick={() => onSelectParagraph?.(isSelected ? null : idx)}
+                      className={`leading-relaxed rounded-lg transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-amber-100/70 ring-2 ring-amber-400 p-2.5 -m-1 shadow-2xs'
+                          : 'hover:bg-amber-50/60 p-1 -m-1'
+                      }`}
+                      title={
+                        language === 'zh'
+                          ? '点击在此工作区中溯源该段落对应的事实依据'
+                          : 'Click to trace supporting facts for this paragraph'
+                      }
+                    >
+                      {para}
+                    </p>
+                  );
+                })
               ) : (
                 <div className="p-8 text-center border-2 border-dashed border-stone-200 rounded-xl">
                   <p className="text-stone-400 italic mb-2">

@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+:root {
+  --desktop-lavender: #DCD4EA;
+  --desktop-cream: #F6F0E7;
+  --desktop-blue: #B9DDE3;
+  --desktop-pink: #E8B8C9;
+  --desktop-mint: #BFE2D3;
+  --desktop-amber: #F2B35D;
+  --surface-primary: #FFFDFC;
+  --surface-secondary: #F2EDF3;
+  --text-primary: #29252D;
+  --text-secondary: #68616D;
+  --border-dark: #403A45;
+  --confirmed-green: #3B8C68;
+  --warning-amber: #B36D14;
+  --private-purple: #73579A;
+  --error-red: #A94343;
+}
+
 @layer utilities {
   .font-serif-reading {
     font-family: 'Newsreader', 'Noto Serif SC', 'Lora', Georgia, Cambria, 'Times New Roman', Times, serif;
@@ -13,6 +31,60 @@
   .font-sans-clean {
     font-family: 'Plus Jakarta Sans', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
   }
+  .font-mono-system {
+    font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+  
+  /* Cyber Desktop window shadow and border */
+  .retro-window-shadow {
+    box-shadow: 4px 5px 0px rgba(64, 58, 69, 0.18), 0 12px 28px -6px rgba(64, 58, 69, 0.12);
+  }
+  
+  .retro-dock-shadow {
+    box-shadow: 0 8px 24px -4px rgba(64, 58, 69, 0.18), 3px 4px 0px rgba(64, 58, 69, 0.15);
+  }
+
+  .stamp-confirmed {
+    border: 2px dashed #3B8C68;
+    color: #3B8C68;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    transform: rotate(-3deg);
+  }
+
+  .stamp-protected {
+    border: 2px dashed #73579A;
+    color: #73579A;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    transform: rotate(2deg);
+  }
+}
+
+/* Abstract CSS Wallpaper */
+.desktop-wallpaper {
+  background-color: #ECE5F3;
+  background-image: 
+    radial-gradient(circle at 12% 18%, rgba(246, 240, 231, 0.85) 0%, transparent 45%),
+    radial-gradient(circle at 88% 24%, rgba(185, 221, 227, 0.45) 0%, transparent 40%),
+    radial-gradient(circle at 75% 82%, rgba(232, 184, 201, 0.35) 0%, transparent 45%),
+    radial-gradient(circle at 25% 75%, rgba(191, 226, 211, 0.4) 0%, transparent 38%),
+    linear-gradient(135deg, rgba(220, 212, 234, 0.5) 0%, rgba(246, 240, 231, 0.7) 50%, rgba(220, 212, 234, 0.6) 100%);
+  position: relative;
+}
+
+.desktop-wallpaper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(#403A45 0.75px, transparent 0.75px),
+    linear-gradient(to right, rgba(64, 58, 69, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(64, 58, 69, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px, 48px 48px, 48px 48px;
+  background-position: 0 0, 0 0, 0 0;
+  opacity: 0.45;
+  pointer-events: none;
 }
 
 @media print {

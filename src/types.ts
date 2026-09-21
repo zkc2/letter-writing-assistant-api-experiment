@@ -91,3 +91,87 @@ export interface CritiqueResult {
   recommendations: string[];
   etiquetteCheck?: string;
 }
+
+export type WorkspaceSection = 'intake' | 'timeline' | 'facts' | 'draft' | 'history' | 'settings';
+
+export type CaseDesktopStatus = 'locked' | 'needs_confirmation' | 'ready_to_draft' | 'approved';
+
+export type EventCategory =
+  | 'workload'
+  | 'communication'
+  | 'experience'
+  | 'career'
+  | 'decision'
+  | 'notice'
+  | 'private';
+
+export type EventConfirmationStatus = 'unconfirmed' | 'needs_confirmation' | 'confirmed';
+
+export type FactPrivacySetting = 'include' | 'background' | 'private';
+
+export interface TimelineEvent {
+  id: string;
+  date: string;
+  summary: string;
+  category: EventCategory;
+  status: EventConfirmationStatus;
+  privacy: FactPrivacySetting;
+  hasConflict?: boolean;
+  conflictDetails?: string;
+  order: number;
+}
+
+export type CaseFactStatus = 'missing' | 'needs_confirmation' | 'confirmed' | 'private' | 'conflict';
+
+export interface ConfirmedFactItem {
+  id: 'whyResigning' | 'badExperiences' | 'noticePeriodOrDate' | 'whatNotToSay';
+  label: string;
+  value: string;
+  status: CaseFactStatus;
+  privacy: FactPrivacySetting;
+  conflictDetails?: string;
+}
+
+export interface WordingTransformation {
+  id: string;
+  original: string;
+  professional: string;
+  category: string;
+  status: 'suggested' | 'accepted' | 'edited' | 'private_context' | 'excluded';
+  isCustom?: boolean;
+}
+
+export interface LetterVersion {
+  id: string;
+  checkpoint: 'created' | 'user_edited' | 'ai_refined' | 'approved';
+  timestamp: number;
+  label: string;
+  body: string;
+  subject?: string;
+  salutation?: string;
+  closing?: string;
+  signoffName?: string;
+}
+
+export interface DetectedConflict {
+  id: string;
+  type: 'date' | 'intent' | 'notice' | 'privacy';
+  title: string;
+  description: string;
+  valueA: string;
+  valueB: string;
+  question: string;
+  resolved: boolean;
+  resolvedChoice?: 'A' | 'B' | 'custom';
+}
+
+export interface SourceTraceMapping {
+  paragraphIndex: number;
+  paragraphText: string;
+  factId: 'whyResigning' | 'badExperiences' | 'noticePeriodOrDate' | 'whatNotToSay';
+  factLabel: string;
+  sourceText: string;
+  isRewritten: boolean;
+  reason: string;
+}
+
